@@ -28,12 +28,13 @@ declare const __E2E__: boolean;
   const root = host.attachShadow({ mode: __E2E__ || w.__qfZapOpenShadow ? 'open' : 'closed' });
   root.innerHTML = `<style>
     .box { position: fixed; border: 2px solid #169383; background: rgba(22,147,131,.18); pointer-events: none; box-sizing: border-box; border-radius: 3px; }
-    .bar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); pointer-events: auto; display: flex; gap: 8px; align-items: center;
+    .bar { position: fixed; left: 12px; right: 12px; margin: 0 auto; width: fit-content; bottom: 16px; pointer-events: auto; display: flex; gap: 8px; align-items: center;
       font: 13px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #1d1d1f; background: #fff;
-      border: 1px solid #c7c7cc; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.22); padding: 8px 8px 8px 14px; white-space: nowrap; }
+      border: 1px solid #c7c7cc; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,.22); padding: 8px 8px 8px 14px; box-sizing: border-box; }
+    #qf-zap-text { min-width: 0; }
     @media (prefers-color-scheme: dark) { .bar { color: #f2f2f7; background: #1c1c1e; border-color: #48484a; } }
     .count { color: #8e8e93; }
-    button { font: inherit; padding: 5px 11px; border-radius: 8px; border: 1px solid #c7c7cc; background: transparent; color: inherit; cursor: pointer; }
+    button { font: inherit; padding: 5px 11px; border-radius: 8px; border: 1px solid #c7c7cc; background: transparent; color: inherit; cursor: pointer; flex: none; white-space: nowrap; }
     button.primary { background: #169383; border-color: #169383; color: #fff; }
     button:disabled { opacity: .45; cursor: default; }
   </style><div class="layer"></div><div class="bar" role="toolbar" aria-label="Zap mode">
