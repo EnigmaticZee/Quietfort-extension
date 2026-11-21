@@ -1,0 +1,219 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scriptlet tests (uBO / AdGuard list support)</title>
+<style>.spoofed{display:none} .abp7{outline-width:7px}</style>
+<script>
+// Clean the slate for a reload.
+document.cookie = 'consent=; max-age=0; path=/'; document.cookie = 'stamp=; max-age=0; path=/'; document.cookie = '_ga_x=1; path=/';
+try { localStorage.clear(); localStorage.setItem('ads_seen', '1'); } catch (e) {}
+var CONFIG = {
+  s: [
+    ["remove-node-text", ["script", "adblockDetect"]],
+    ["replace-node-text", ["script", "/var mode = 'ads'/", "var mode = 'clean'"]],
+    ["adjust-setTimeout", ["boostMe", "3000", "0.02"]],
+    ["adjust-setInterval", ["boostIv", "*", "0.02"]],
+    ["prevent-requestAnimationFrame", ["rafAd"]],
+    ["prevent-eval-if", ["evilEval"]],
+    ["abort-on-stack-trace", ["stackTrap", "inlineScript"]],
+    ["set-cookie", ["consent", "accepted"]],
+    ["set-cookie", ["evil", "<script>"]],
+    ["trusted-set-cookie", ["stamp", "$now$", "1day"]],
+    ["remove-cookie", ["/^_ga/"]],
+    ["set-local-storage-item", ["cmp", "true"]],
+    ["set-local-storage-item", ["bad", "arbitrary text"]],
+    ["set-local-storage-item", ["ads_seen", "$remove$"]],
+    ["trusted-set-local-storage-item", ["prefs", "{\"ads\":false}"]],
+    ["set-session-storage-item", ["sess", "1"]],
+    ["set-attr", ["#sa", "data-ok", "true"]],
+    ["set-attr", ["#sa", "data-bad", "javascript:alert(1)"]],
+    ["trusted-set-attr", ["#sa", "onclick", "alert(1)"]],
+    ["trusted-set-attr", ["#sa", "data-any", "anything goes"]],
+    ["href-sanitizer", ["a.tracked", "?url"]],
+    ["json-prune-fetch-response", ["ads", "", "propsToMatch", "jsonfetch"]],
+    ["json-prune-xhr-response", ["ads", "", "propsToMatch", "jsonxhr"]],
+    ["trusted-replace-fetch-response", ["\"ad\":true", "\"ad\":false", "replacefetch"]],
+    ["trusted-replace-xhr-response", ["/preroll/g", "none", "replacexhr"]],
+    ["m3u-prune", ["adsegment", "playlist"]],
+    ["xml-prune", ["Ad", "", "vastfile"]],
+    ["prevent-fetch", ["url:/blockedcall/ method:POST", "emptyObj"]],
+    ["trusted-prevent-xhr", ["customxhr", "{\"ok\":1}"]],
+    ["trusted-set-constant", ["cfg.ads", "{\"value\": {\"enabled\": false}}"]],
+    ["set-constant", ["loader", "noopPromiseResolve"]],
+    ["set-constant", ["ytp.playerAds", "undefined"]],
+    ["set-constant", ["ytp.adPlacements", "undefined"]],
+    ["set-constant", ["ytp.adSlots", "undefined"]],
+    ["prevent-adblock-detector", []],
+    ["popads-dummy", []],
+    ["prevent-element-src-loading", ["img", "adpixel"]],
+    ["spoof-css", [".spoofed", "display", "block"]],
+    ["trusted-click-element", ["#late-btn, #second-btn"]],
+    ["disable-newtab-links", []],
+    ["trusted-replace-argument", ["document.querySelector", "0", "#replaced-target", "condition", "#arg-original"]],
+    ["trusted-replace-outbound-text", ["btoa", "QUQ=", "T0s=", "condition", "QUQ"]],
+    ["trusted-suppress-native-method", ["console.warn", "/suppress-me/", "prevent"]],
+    ["trusted-override-element-method", ["HTMLElement.prototype.click", "#no-click"]],
+    ["trusted-create-html", ["#create-here", "<span id=\"created\">made</span><script>window.createdScriptRan = true<\/script>"]],
+    ["prevent-innerHTML", ["#inner", "adblock"]],
+    ["json-edit", ["..items.*[?.kind==\"ad\"]"]],
+    ["json-edit", ["..secret=1"]],
+    ["trusted-json-edit-fetch-response", [".flag=true", "jsonedit"]],
+    ["trusted-click-element", ["#accept-all"]],
+    ["trusted-click-element", ["#accept-necessary"]]
+  ],
+  p: [
+    ":matches-path(/scriptlets/) .mp-ad",
+    ":matches-path(/nowhere/) .mp-keep",
+    "div:matches-attr(\"data-ad\"=\"1\")",
+    "div.ra:remove-attr(/^data-track/)",
+    "div.rcl:remove-class(/^ad-/)",
+    "div.st:style(color: rgb(0, 128, 0) !important)",
+    "#keep-me:others()",
+    "div.media:matches-media((min-width: 1px)):style(outline-color: rgb(1, 2, 3))",
+    "div.media2:matches-media((max-width: 1px)):style(outline-color: rgb(1, 2, 3))",
+    "div:-abp-properties(outline-width: 7px)"
+  ]
+};
+var xhr = new XMLHttpRequest(); xhr.open('GET', '/assets/runtime.js', false); xhr.send();
+(0, eval)(xhr.responseText.trim().replace(/;$/, '') + '(' + JSON.stringify(CONFIG) + ')');
+</script>
+<script>window.R = {}; window.detectorFlag = false;</script>
+<script>var ytp = { playerAds: 1, adPlacements: 2, adSlots: 3, keep: 4 };</script>
+<script>window.detectorFlag = true; /* adblockDetect */</script>
+<script>var mode = 'ads'; window.modeSeen = mode;</script>
+<script>
+try { window.stackTrap = 1; var st = window.stackTrap; R.abortOnStackTrace = false; } catch (e) { R.abortOnStackTrace = true; }
+window.boosted = false; setTimeout(function boostMe() { window.boosted = true; }, 3000);
+window.ivRuns = 0; var biv = setInterval(function boostIv() { window.ivRuns++; }, 3000);
+window.rafRan = false; requestAnimationFrame(function rafAd() { window.rafRan = true; });
+window.rafOk = false; requestAnimationFrame(function normalRaf() { window.rafOk = true; });
+window.evalRan = false; eval('window.evalRan = true; // evilEval');
+window.evalOk = false; eval('window.evalOk = true');
+window.cfg = { ads: { enabled: true } };
+window.FuckAdBlock = function () {};
+window.fabNotDetected = false; window.fuckAdBlock.onNotDetected(function () { window.fabNotDetected = true; });
+window.PopAds = 'replaced';
+</script>
+</head><body>
+<div id="others-wrap"><div id="keep-me">
+<div id="sa"></div>
+<a class="tracked" id="tr" href="https://tracker.example/out?url=https%3A%2F%2Fdest.example%2Fpage">link</a>
+<a id="nt" href="#x" target="_blank">newtab</a>
+<img id="pix">
+<div class="spoofed" id="sp">spoof</div>
+<div id="mp"><div class="mp-ad" id="mp1">ad</div><div class="mp-keep" id="mp2">keep</div></div>
+<div data-ad="1" id="ma1">a</div><div data-ad="2" id="ma2">b</div>
+<div class="ra" id="ra1" data-track-id="x" data-keep="y">ra</div>
+<div class="rcl ad-banner keep" id="rc1">rc</div>
+<div class="st" id="st1">styled</div>
+<div class="media" id="md1">media</div><div class="media2" id="md2">media2</div>
+<span id="inside">in</span>
+<div id="replaced-target"></div><div id="create-here"></div><div id="inner"></div>
+<button id="no-click" onclick="window.noClickRan=true">x</button>
+<button id="accept-all" onclick="window.acceptClicked=true">Accept all</button>
+<button id="accept-necessary" onclick="window.necessaryClicked=true">Accept necessary only</button>
+<div class="abp7" id="abp1">abp</div><div id="abp2">plain</div>
+</div><div id="sibling">sib</div></div>
+<pre id="out"></pre>
+<script>
+setTimeout(function () {
+  var b = document.createElement('button'); b.id = 'late-btn'; b.onclick = function () { window.lateClicked = true; };
+  document.body.appendChild(b);
+  var c = document.createElement('button'); c.id = 'second-btn'; c.onclick = function () { window.secondClicked = !!window.lateClicked; };
+  document.body.appendChild(c);
+}, 150);
+(async function () {
+ try {
+  var hidden = function (id) { var el = document.getElementById(id); return el ? el.style.display === 'none' : 'removed'; };
+  var json = function (o) { return 'data:application/json,' + encodeURIComponent(JSON.stringify(o)); };
+  var xhrGet = function (url, type) {
+    return new Promise(function (res) { var x = new XMLHttpRequest(); x.open('GET', url); if (type) x.responseType = type; x.onload = function () { res(x); }; x.onerror = function () { res(x); }; x.send(); });
+  };
+  R.removeNodeText = window.detectorFlag === false;
+  R.replaceNodeText = window.modeSeen === 'clean';
+  R.preventEval = window.evalRan === false && window.evalOk === true;
+  R.setCookie = /(?:^|; )consent=accepted/.test(document.cookie);
+  R.setCookieRefusesUnsafe = !/evil=/.test(document.cookie);
+  R.trustedSetCookieNow = /(?:^|; )stamp=\d{12,}/.test(document.cookie);
+  R.removeCookie = !/_ga_x=/.test(document.cookie);
+  R.setLocalStorage = localStorage.getItem('cmp') === 'true' && localStorage.getItem('bad') === null;
+  R.removeLocalStorage = localStorage.getItem('ads_seen') === null;
+  R.trustedLocalStorage = localStorage.getItem('prefs') === '{"ads":false}';
+  R.sessionStorage = sessionStorage.getItem('sess') === '1';
+  R.trustedSetConstant = window.cfg.ads && window.cfg.ads.enabled === false;
+  // Three set-constants waiting on the same missing object (as uBO's YouTube rules): all three apply.
+  R.setConstantSharedChain = ytp.playerAds === undefined && ytp.adPlacements === undefined && ytp.adSlots === undefined && ytp.keep === 4;
+  R.setConstantPromise = typeof window.loader === 'function' && window.loader() instanceof Promise;
+  R.fabDefused = window.fabNotDetected === false ? 'pending' : true;
+  R.popadsDummy = typeof window.PopAds === 'object';
+  var fp = await fetch(json({ ads: [1], keep: 1 }) + '#jsonfetch').then(function (r) { return r.json(); });
+  R.jsonPruneFetch = !('ads' in fp) && fp.keep === 1;
+  var fpOther = await fetch(json({ ads: [1] })).then(function (r) { return r.json(); });
+  R.jsonPruneFetchOnlyMatching = Array.isArray(fpOther.ads);
+  var xp = await xhrGet(json({ ads: [1], keep: 2 }) + '#jsonxhr');
+  R.jsonPruneXhr = JSON.parse(xp.responseText).keep === 2 && !('ads' in JSON.parse(xp.responseText));
+  var xpj = await xhrGet(json({ ads: [1], keep: 3 }) + '#jsonxhr', 'json');
+  R.jsonPruneXhrJsonType = xpj.response && xpj.response.keep === 3 && !('ads' in xpj.response);
+  var rf = await fetch(json({ ad: true }) + '#replacefetch').then(function (r) { return r.text(); });
+  R.trustedReplaceFetch = rf === '{"ad":false}';
+  var rx = await xhrGet('data:text/plain,preroll-preroll#replacexhr');
+  R.trustedReplaceXhr = rx.responseText === 'none-none';
+  var m3u = await fetch('data:application/vnd.apple.mpegurl,' + encodeURIComponent('#EXTM3U\n#EXTINF:5,adsegment\nad1.ts\n#EXTINF:5,\nmain1.ts\n') + '#playlist').then(function (r) { return r.text(); });
+  R.m3uPrune = m3u.indexOf('ad1.ts') < 0 && m3u.indexOf('main1.ts') > 0;
+  var vast = await fetch('data:text/xml,' + encodeURIComponent('<VAST><Ad id="1"/><Other/></VAST>') + '#vastfile').then(function (r) { return r.text(); });
+  R.xmlPrune = vast.indexOf('<Ad') < 0 && vast.indexOf('Other') > 0;
+  var pf = await fetch(json({ real: 1 }) + '#blockedcall', { method: 'POST' }).then(function (r) { return r.text(); });
+  var pfGet = await fetch(json({ real: 1 }) + '#blockedcall').then(function (r) { return r.text(); });
+  R.preventFetchProps = pf === '{}' && pfGet === '{"real":1}';
+  var cx = await xhrGet('data:text/plain,real#customxhr');
+  R.trustedPreventXhr = cx.responseText === '{"ok":1}';
+  await new Promise(function (r) { setTimeout(r, 700); });
+  clearInterval(biv);
+  R.adjustSetTimeout = window.boosted === true;
+  R.adjustSetInterval = window.ivRuns > 0;
+  R.preventRaf = window.rafRan === false && window.rafOk === true;
+  var sa = document.getElementById('sa');
+  R.setAttr = sa.getAttribute('data-ok') === 'true' && !sa.hasAttribute('data-bad');
+  R.trustedSetAttr = sa.getAttribute('data-any') === 'anything goes' && !sa.hasAttribute('onclick');
+  R.hrefSanitizer = document.getElementById('tr').getAttribute('href') === 'https://dest.example/page';
+  var pix = document.getElementById('pix'); pix.src = 'https://ads.example/adpixel.gif';
+  var pix2 = document.createElement('img'); pix2.setAttribute('src', 'https://ads.example/adpixel2.gif');
+  var pix3 = document.createElement('img'); pix3.src = 'https://cdn.example/photo.gif';
+  R.preventElementSrc = pix.src.indexOf('data:image/gif') === 0 && pix2.getAttribute('src').indexOf('data:image/gif') === 0 && pix3.src === 'https://cdn.example/photo.gif';
+  R.spoofCss = getComputedStyle(document.getElementById('sp')).display === 'block' && getComputedStyle(document.getElementById('sp')).getPropertyValue('display') === 'block';
+  R.trustedClickElement = window.lateClicked === true && window.secondClicked === true;
+  document.getElementById('nt').addEventListener('click', function (e) { e.preventDefault(); });
+  document.getElementById('nt').click();
+  R.disableNewtabLinks = !document.getElementById('nt').hasAttribute('target');
+  R.fabDefused = window.fabNotDetected === true;
+  R.matchesPath = hidden('mp1') === true && hidden('mp2') === false;
+  R.matchesAttr = hidden('ma1') === true && hidden('ma2') === false;
+  var ra = document.getElementById('ra1');
+  R.removeAttrOp = !ra.hasAttribute('data-track-id') && ra.hasAttribute('data-keep') && hidden('ra1') === false;
+  var rc = document.getElementById('rc1');
+  R.removeClassOp = !rc.classList.contains('ad-banner') && rc.classList.contains('keep');
+  R.styleOp = getComputedStyle(document.getElementById('st1')).color === 'rgb(0, 128, 0)';
+  R.othersOp = hidden('sibling') === true && hidden('keep-me') === false && hidden('inside') === false;
+  R.matchesMedia = getComputedStyle(document.getElementById('md1')).outlineColor === 'rgb(1, 2, 3)' && getComputedStyle(document.getElementById('md2')).outlineColor !== 'rgb(1, 2, 3)';
+  } catch (e) { R.testCrashed = String(e && e.stack || e); }
+  R.trustedReplaceArgument = document.querySelector('#arg-original') === document.getElementById('replaced-target');
+  R.trustedReplaceOutbound = btoa('AD') === 'OKs=' || btoa('AD') === 'T0s=';
+  var warned = false, ow = console.warn;
+  R.trustedSuppressNative = (function () { try { console.warn('suppress-me'); return true; } catch (e) { return false; } })();
+  document.getElementById('no-click').click();
+  R.trustedOverrideElementMethod = window.noClickRan !== true;
+  R.trustedCreateHtml = !!document.getElementById('created') && window.createdScriptRan !== true;
+  document.getElementById('inner').innerHTML = 'adblock warning';
+  var innerBlocked = document.getElementById('inner').innerHTML === '';
+  document.getElementById('inner').innerHTML = 'fine';
+  R.preventInnerHTML = innerBlocked && document.getElementById('inner').innerHTML === 'fine';
+  var je = JSON.parse('{"items":[{"kind":"ad"},{"kind":"post"}],"a":{"secret":1}}');
+  R.jsonEdit = je.items.length === 1 && je.items[0].kind === 'post' && je.a.secret === 1;
+  var jf = await fetch('data:application/json,' + encodeURIComponent('{"flag":false}') + '#jsonedit').then(function (r) { return r.json(); });
+  R.trustedJsonEditFetch = jf.flag === true;
+  R.clickNeverAccepts = window.acceptClicked !== true && window.necessaryClicked === true;
+  R.abpProperties = hidden('abp1') === true && hidden('abp2') === false;
+  var failed = Object.keys(R).filter(function (k) { return R[k] !== true; });
+  window.__results = { total: Object.keys(R).length, failed: failed, detail: R };
+  document.getElementById('out').textContent = JSON.stringify(window.__results, null, 1);
+})();
+</script>
+</body></html>

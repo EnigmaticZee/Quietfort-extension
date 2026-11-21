@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+     Test fixture written for these tests: a OneTrust-style consent banner
+     (same element ids and behaviour as the real one, no OneTrust code).
+     Scripts/styles carry nonce="fixture" so the page also works under the
+     strict CSP the test servers add on the csp-cmp.test host. -->
+<html lang="en"><head><meta charset="utf-8"><title>OneTrust-style consent fixture</title>
+<script nonce="fixture">
+  window.__clicked = [];
+  window.__violations = [];
+  document.addEventListener('securitypolicyviolation', function (e) {
+    window.__violations.push(e.effectiveDirective + ' ' + (e.blockedURI || '') + ' ' + (e.sample || ''));
+  });
+  window.OnetrustActiveGroups = ',C0001,C0002,C0003,C0004,';
+</script>
+<style nonce="fixture" id="onetrust-style">
+  #article { height: 4000px; }
+  body.ot-locked { overflow: hidden; }
+  #onetrust-banner-sdk { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2147483000; background: #fff; border-top: 2px solid #333; padding: 24px; font: 16px sans-serif; }
+  .onetrust-pc-dark-filter { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, .5); z-index: 2147482999; }
+  #onetrust-button-group button { margin-right: 8px; padding: 8px 12px; }
+</style>
+</head>
+<body class="ot-locked">
+<h1 id="title">Local news</h1>
+<article id="article"><p>The real article text.</p></article>
+<div id="onetrust-consent-sdk">
+  <div class="onetrust-pc-dark-filter"></div>
+  <div id="onetrust-banner-sdk" role="region" aria-label="Cookie banner">
+    <p id="onetrust-policy-text">We and our partners store and access information on your device.</p>
+    <div id="onetrust-button-group">
+      <button id="onetrust-pc-btn-handler">Cookie Settings</button>
+      <button id="onetrust-reject-all-handler">Reject All</button>
+      <button id="onetrust-accept-btn-handler">Accept All Cookies</button>
+    </div>
+  </div>
+</div>
+<script nonce="fixture">
+(function () {
+  function choose(choice) {
+    window.__clicked.push(choice);
+    window.OnetrustActiveGroups = choice === 'accept' ? ',C0001,C0002,C0003,C0004,' : ',C0001,';
+    document.getElementById('onetrust-banner-sdk').style.display = 'none';
+    document.querySelector('.onetrust-pc-dark-filter').style.display = 'none';
+    document.body.classList.remove('ot-locked');
+  }
+  document.getElementById('onetrust-accept-btn-handler').addEventListener('click', function () { choose('accept'); });
+  document.getElementById('onetrust-reject-all-handler').addEventListener('click', function () { choose('reject'); });
+  document.getElementById('onetrust-pc-btn-handler').addEventListener('click', function () { window.__clicked.push('settings'); });
+})();
+</script>
+</body></html>

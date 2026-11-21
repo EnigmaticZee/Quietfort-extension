@@ -1,0 +1,113 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Runtime tests</title>
+<style>.box{color:rgb(255,0,0)} .blue{color:rgb(0,0,255)}</style>
+<script>
+// Load the runtime exactly as the proxy injects it: (RUNTIME)(CONFIG), before page scripts.
+var CONFIG = {
+  s: [
+    ["set-constant", ["ads.enabled", "false"]],
+    ["set-constant", ["deep.a.b", "true"]],
+    ["set-constant", ["num", "42"]],
+    ["set-constant", ["evil", "alert(1)"]],
+    ["abort-on-property-read", ["badProp"]],
+    ["abort-on-property-write", ["writeTrap"]],
+    ["prevent-setTimeout", ["adblock"]],
+    ["prevent-setInterval", ["detector", "100"]],
+    ["prevent-fetch", ["ads.js"]],
+    ["prevent-xhr", ["/pagead/"]],
+    ["json-prune", ["ads playerAds.[].id", ""]],
+    ["remove-attr", ["onclick", "#x"]],
+    ["remove-class", ["blur"]],
+    ["prevent-addEventListener", ["click", "trackClick"]],
+    ["prevent-window-open", ["popunder"]],
+    ["nowebrtc", []],
+    ["unknown-scriptlet", ["x"]]
+  ],
+  p: [
+    "div.card:has-text(Sponsored)",
+    "span.inner:upward(2)",
+    ".box:matches-css(color: rgb(255, 0, 0))",
+    "p:min-text-length(50)",
+    ".w:has(> .ad-label)",
+    ".r:remove()",
+    ":xpath(//div[@data-x=\"1\"])",
+    "li:-abp-contains(/promo\\d/)",
+    ".late-card:has-text(Late ad)"
+  ],
+  test: true
+};
+var xhr = new XMLHttpRequest(); xhr.open('GET', '/assets/runtime.js', false); xhr.send();
+(0, eval)(xhr.responseText.trim().replace(/;$/, '') + '(' + JSON.stringify(CONFIG) + ')');
+</script>
+<script>
+// "Page" code running after the runtime, like a real site would.
+window.R = {};
+window.ads = { enabled: true };
+window.deep = {}; window.deep.a = { b: false };
+window.num = 1;
+try { var v = window.badProp; R.aoprThrew = false; } catch (e) { R.aoprThrew = true; }
+try { window.writeTrap = 1; R.aopwThrew = false; } catch (e) { R.aopwThrew = true; }
+window.timeoutRan = false; setTimeout(function adblockCheck() { window.timeoutRan = true; }, 10);
+window.okTimeoutRan = false; setTimeout(function normal() { window.okTimeoutRan = true; }, 10);
+window.intervalRuns = 0; var iv = setInterval(function detector() { window.intervalRuns++; }, 100);
+document.addEventListener('click', function trackClick() { window.tracked = true; });
+document.addEventListener('click', function realHandler() { window.realClicked = true; });
+</script>
+</head><body>
+<div class="card" id="c1">Sponsored content here</div>
+<div class="card" id="c2">Normal article</div>
+<div id="up-outer"><div id="up-mid"><span class="inner" id="up-in">x</span></div></div>
+<div class="box" id="box-red">red</div><div class="box blue" id="box-blue">blue</div>
+<p id="p-long">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.</p>
+<p id="p-short">short</p>
+<div class="w" id="w1"><span class="ad-label">Ad</span></div><div class="w" id="w2"><span>ok</span></div>
+<div class="r" id="r1">remove me</div>
+<div data-x="1" id="xp1">xpath</div><div data-x="2" id="xp2">keep</div>
+<ul><li id="li1">promo7 deal</li><li id="li2">regular</li></ul>
+<button id="x" onclick="window.clicked=1">btn</button>
+<div class="blur" id="blur1">blurred</div>
+<div class="late-card" id="late-holder"></div>
+<pre id="out"></pre>
+<script>
+setTimeout(function () { document.getElementById('late-holder').textContent = 'Late ad'; }, 50);
+(async function () {
+  var hidden = function (id) { var el = document.getElementById(id); return el ? getComputedStyle(el).display === 'none' : 'removed'; };
+  R.setConstant = window.ads.enabled === false;
+  R.setConstantDeep = window.deep.a.b === true;
+  R.setConstantNumber = window.num === 42;
+  R.refusesArbitraryValue = window.evil === undefined;
+  var f1 = await fetch('/ads.js?x=1').then(function (r) { return r.text(); });
+  R.preventFetch = f1 === '';
+  var f2status = await fetch('/assets/runtime.js').then(function (r) { return r.status; });
+  R.fetchPassesOthers = f2status === 200;
+  await new Promise(function (res) {
+    var x = new XMLHttpRequest(); x.open('GET', '/pagead/ad.js'); x.onload = function () { R.preventXhr = x.status === 200 && x.responseText === ''; res(); }; x.send();
+  });
+  var parsed = JSON.parse('{"ads":[1],"keep":1,"playerAds":[{"id":1,"v":2}]}');
+  R.jsonPrune = !('ads' in parsed) && parsed.keep === 1 && !('id' in parsed.playerAds[0]) && parsed.playerAds[0].v === 2;
+  R.windowOpen = typeof window.open('https://popunder.example/') === 'object';
+  try { new RTCPeerConnection(); R.nowebrtc = true; await new RTCPeerConnection().createOffer().then(function () { R.nowebrtc = false; }, function () {}); } catch (e) { R.nowebrtc = 'threw'; }
+  document.body.click();
+  await new Promise(function (r) { setTimeout(r, 400); });
+  clearInterval(iv);
+  R.preventSetTimeout = window.timeoutRan === false;
+  R.normalTimeoutRuns = window.okTimeoutRan === true;
+  R.preventSetInterval = window.intervalRuns === 0;
+  R.preventAddEventListener = window.tracked !== true && window.realClicked === true;
+  R.removeAttr = !document.getElementById('x').hasAttribute('onclick');
+  R.removeClass = !document.getElementById('blur1').classList.contains('blur');
+  R.hasText = hidden('c1') === true && hidden('c2') === false;
+  R.upward = hidden('up-outer') === true && hidden('up-mid') === false;
+  R.matchesCss = hidden('box-red') === true && hidden('box-blue') === false;
+  R.minTextLength = hidden('p-long') === true && hidden('p-short') === false;
+  R.hasNative = hidden('w1') === true && hidden('w2') === false;
+  R.remove = hidden('r1') === 'removed';
+  R.xpath = hidden('xp1') === true && hidden('xp2') === false;
+  R.abpContainsRegex = hidden('li1') === true && hidden('li2') === false;
+  R.mutationObserved = hidden('late-holder') === true;
+  var failed = Object.keys(R).filter(function (k) { return R[k] !== true; });
+  window.__results = { total: Object.keys(R).length, failed: failed, detail: R };
+  document.getElementById('out').textContent = JSON.stringify(window.__results, null, 1);
+})();
+</script>
+</body></html>

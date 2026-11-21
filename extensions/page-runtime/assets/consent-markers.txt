@@ -1,0 +1,90 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# Markers of consent-management platforms (CMPs), one per line, matched
+# case-insensitively as plain substrings. The proxy injects the cookie-banner
+# handler (DuckDuckGo autoconsent) only into HTML documents whose source
+# contains one of these, so ordinary pages pay nothing. The extension uses the
+# same list to decide which iframes get it (the top frame always does).
+#
+# Taken from the CMPs autoconsent has rules for (rule names, element ids,
+# script hosts) plus the IAB TCF API names. Keep entries specific: a marker
+# that appears on ordinary pages only costs time, never correctness, because
+# autoconsent itself does nothing unless one of its rules detects a CMP.
+
+# OneTrust / CookiePro
+onetrust
+otsdkstub
+otbannersdk
+cookielaw.org
+optanon
+cookiepro.com
+# Didomi
+didomi
+# Cookiebot (Cybot)
+cookiebot
+cybotcookiebot
+# Quantcast Choice and other IAB consent hosts
+consensu.org
+qc-cmp2
+quantcast
+# Sourcepoint
+sourcepoint
+sp_message
+privacy-mgmt.com
+# Usercentrics
+usercentrics
+# TrustArc / TRUSTe
+trustarc
+truste.com
+truste-
+# IAB TCF / legacy CMP APIs
+__tcfapi
+__cmp
+__uspapi
+__gpp
+# Others with autoconsent rules
+iubenda
+osano
+complianz
+cmplz
+klaro
+cookieyes
+cookie-law-info
+cookiefirst
+cookie-script.com
+consentmanager
+termly
+axeptio
+tarteaucitron
+borlabs
+uniconsent
+evidon
+crownpeak
+cookiehub
+civiccomputing
+cookieinformation
+coi-banner
+commandersact
+tagcommander
+pubtech
+fundingchoicesmessages
+fc-consent
+sfbx
+appconsent
+gravito
+cookiehint
+moove_gdpr
+cookieconsent
+cookie-consent
+cookie_consent
+cookie-banner
+cookie_banner
+cookie-notice
+cookie_notice
+cookie-bar
+gdpr-cookie
+consent-banner
+consent_banner
+cmpbox

@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.cache/
+test-results/
+safari-app/build/
+safari-app/build.log

@@ -1,0 +1,40 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+     Test fixture: no consent platform at all, but plenty of buttons labelled
+     "Accept" / "Reject" / "Agree" in other contexts (terms, newsletter modal).
+     Nothing on this page may be clicked, hidden or changed. -->
+<html lang="en"><head><meta charset="utf-8"><title>Plain page fixture</title>
+<script nonce="fixture">
+  window.__clicked = [];
+  window.__violations = [];
+  document.addEventListener('securitypolicyviolation', function (e) {
+    window.__violations.push(e.effectiveDirective + ' ' + (e.blockedURI || ''));
+  });
+</script>
+<style nonce="fixture">
+  #article { height: 4000px; }
+  .modal { position: fixed; left: 20%; right: 20%; bottom: 20px; background: #fff; border: 1px solid #333; padding: 20px; z-index: 1000; }
+</style>
+</head>
+<body>
+<h1 id="title">Recipes</h1>
+<article id="article"><p>Mix flour and water. We use only fresh ingredients.</p></article>
+<form id="terms"><label><input type="checkbox" id="terms-box"> I agree to the terms of sale</label>
+  <button type="button" id="accept-terms">Accept terms</button>
+  <button type="button" id="reject-terms">Reject</button></form>
+<div class="modal" id="newsletter" role="dialog" aria-label="Newsletter">
+  <p>Get our weekly recipes by email.</p>
+  <button id="newsletter-accept">Accept all</button>
+  <button id="newsletter-decline">No thanks</button>
+  <button id="newsletter-close" aria-label="Close">×</button>
+</div>
+<script nonce="fixture">
+  document.querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () { window.__clicked.push(b.id); });
+  });
+  document.addEventListener('DOMContentLoaded', function () { window.__snapshot = document.body.innerHTML.length; });
+</script>
+</body></html>

@@ -1,0 +1,141 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quietfort settings</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body { width: auto; max-width: 760px; margin: 0 auto; display: block; padding: 8px 20px 40px; }
+    body > section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; }
+    body > section .switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    body > section .switch input { accent-color: var(--accent); width: 16px; height: 16px; }
+    h1 { font-size: 18px; margin: 16px 14px 4px; }
+    section > p { color: var(--muted); margin: 0 0 8px; }
+    .group h3 { font-size: 13px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    ul.lists { list-style: none; margin: 0; padding: 0; }
+    ul.lists li { border-top: 1px solid var(--line); padding: 8px 0; }
+    ul.lists label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+    ul.lists input { margin-top: 3px; accent-color: var(--accent); }
+    .lname { font-weight: 600; }
+    .meta, .desc { color: var(--muted); font-size: 12px; }
+    .tag { font-size: 10px; font-weight: 600; border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; padding: 0 4px; margin-left: 4px; vertical-align: middle; }
+    .meta code, p code { display: inline; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; word-break: normal; }
+    .err { color: #c0392b; font-size: 12px; }
+    .note { font-size: 12px; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .row input[type=url] { flex: 1 1 260px; font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+    select { font: inherit; padding: 5px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+    pre#dnr-report { white-space: pre-wrap; font-size: 12px; color: var(--muted); margin: 0; }
+    .switch + p, .switch + .meta { margin: 2px 0 10px 24px; }
+    #rules-text { width: 100%; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); margin: 6px 0; resize: vertical; }
+    .row input[type=text] { flex: 1 1 220px; font: inherit; padding: 6px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--fg); }
+    ul.problems { list-style: none; margin: 6px 0 0; padding: 0; font-size: 12px; color: var(--muted); }
+    ul.problems code { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #sites li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Settings</h1>
+  <section class="fixes">
+    <div class="row"><label for="theme-select">Theme</label>
+      <select id="theme-select" aria-label="Theme"><option value="light">Light</option><option value="fortNight">Fort Night</option><option value="graphite">macOS Graphite</option></select></div>
+  </section>
+  <section class="fixes">
+    <label class="switch">
+      <input type="checkbox" id="cookie-toggle" checked>
+      <span>Reject cookie banners automatically</span>
+    </label>
+    <p>Chooses “reject all” / “necessary only” on consent pop-ups (never “accept”), using DuckDuckGo’s open-source autoconsent rules, and hides leftover notices with the EasyList Cookie List (downloaded from its maintainers). <a href="THIRD_PARTY_NOTICES.txt" target="_blank">Third-party notices</a></p>
+  </section>
+  <h1>Privacy</h1>
+  <section class="fixes">
+    <label class="switch"><input type="checkbox" id="gpc-toggle"><span>Send Global Privacy Control (“do not sell or share”)</span></label>
+    <p class="meta">Adds the <code>Sec-GPC: 1</code> header to every request and sets <code>navigator.globalPrivacyControl</code> on every page.</p>
+    <label class="switch"><input type="checkbox" id="referrer-toggle"><span>Trim third-party Referer to the site’s origin</span></label>
+    <p class="meta" id="referrer-note">Other sites learn only which site you came from, not the page.</p>
+    <label class="switch"><input type="checkbox" id="clientdata-toggle"><span>Remove Chrome’s X-Client-Data header on Google sites</span></label>
+    <p class="meta" id="clientdata-note">Chrome sends Google an identifier of its experiment configuration; this strips it.</p>
+  </section>
+  <h1>On-device AI <span class="tag">opt-in</span></h1>
+  <section class="fixes">
+    <p>These use the browser’s built-in language model on this device (Chrome’s Prompt API). Page content is never sent anywhere. Without the model they fall back to the rule-based checks described below.</p>
+    <p id="ai-model">Model: checking…</p>
+    <div class="row"><button id="ai-download" hidden>Download the on-device model</button><span class="meta" id="ai-download-progress"></span></div>
+    <label class="switch"><input type="checkbox" id="ai-sponsored"><span>Hide sponsored content</span></label>
+    <p class="meta">Finds blocks labelled “Sponsored”, “Anzeige”, “Sponsorisé”…, affiliate links and ad frames. Clear cases are hidden; unclear ones are asked to the model once per site layout (kept when there is no model).</p>
+    <label class="switch"><input type="checkbox" id="ai-scam"><span>Warn about scam pages</span></label>
+    <p class="meta">Fake virus alerts, “call this number” support scams, browser lockers, crypto “giveaways”, urgent gift-card payments. Shows a warning with “Leave page”; never blocks.</p>
+    <label class="switch"><input type="checkbox" id="ai-cookie"><span>Let the model reject cookie banners autoconsent doesn’t know</span></label>
+    <p class="meta">Every click it proposes is checked: it must read as “reject all” / “necessary only” and never as accept, subscribe, pay or log in. Needs the model; does nothing without it.</p>
+    <div class="row"><button id="ai-clear">Forget AI decisions</button><span class="meta" id="ai-clear-done"></span></div>
+  </section>
+  <h1>Filter lists</h1>
+  <section class="fixes" id="lists-section">
+    <p>Lists are downloaded from their maintainers, kept only in this browser, and refreshed daily. <button id="lists-refresh">Update now</button></p>
+    <p class="note" id="lists-override" hidden>A diagnostic list override is active; the choices below take effect when it is removed.</p>
+    <div id="lists"></div>
+    <div class="group">
+      <h3>Custom lists</h3>
+      <ul class="lists" id="custom-lists"></ul>
+      <div class="row">
+        <input type="url" id="custom-url" placeholder="https://example.com/filters.txt" aria-label="Filter list URL">
+        <select id="custom-kind" aria-label="List type"><option value="filters">Filter rules</option><option value="protection">Dangerous hosts (warning page)</option></select>
+        <button id="custom-add">Add list</button>
+      </div>
+      <p class="meta" id="custom-msg"></p>
+    </div>
+    <div class="group">
+      <h3>Rule report</h3>
+      <pre id="dnr-report">…</pre>
+    </div>
+  </section>
+  <h1>My Rules</h1>
+  <section class="fixes" id="rules-section">
+    <p>Your own filter rules, one per line, in the usual format (<code>||ads.example^</code>, <code>example.com##.banner</code>, <code>@@||example.com^</code>). Lines starting with <code>!</code> are comments.</p>
+    <textarea id="rules-text" rows="10" spellcheck="false" aria-label="My Rules"></textarea>
+    <div class="row"><button id="rules-save" class="primary">Save rules</button><span class="meta" id="rules-msg"></span></div>
+    <ul class="problems" id="rules-problems"></ul>
+  </section>
+
+  <h1>Trusted sites</h1>
+  <section class="fixes" id="sites-section">
+    <p>Blocking is off on these sites. The switch in the toolbar panel adds and removes sites too.</p>
+    <ul class="lists" id="sites"></ul>
+    <p class="meta" id="no-sites" hidden>None.</p>
+    <div class="row">
+      <input type="text" id="site-add-text" placeholder="example.com" aria-label="Website to trust">
+      <button id="site-add">Add site</button>
+    </div>
+    <p class="meta" id="sites-msg"></p>
+  </section>
+
+  <h1>Site fixes</h1>
+  <section class="fixes">
+    <h2>Exceptions from “Fix this site”</h2>
+    <p>Each one switches a single rule off on a single site. They expire after 7 days unless made permanent.</p>
+    <ul id="exceptions"></ul>
+    <p id="no-exceptions" hidden>None.</p>
+  </section>
+  <section class="fixes">
+    <h2>Hidden elements</h2>
+    <ul id="picker"></ul>
+    <p id="no-picker" hidden>None.</p>
+  </section>
+  <h1>Backup</h1>
+  <section class="fixes" id="backup-section">
+    <p>Saves your settings, My Rules, trusted sites, hidden elements and permanent site fixes to a file. Filter lists are not included; they download again.</p>
+    <div class="row">
+      <button id="backup-export">Save backup</button>
+      <button id="backup-import">Restore from backup…</button>
+      <input type="file" id="backup-file" accept=".json,application/json" hidden>
+    </div>
+    <p class="meta" id="backup-msg"></p>
+  </section>
+  <p class="meta"><a href="log.html" target="_blank">What was blocked</a> · <a href="welcome.html" target="_blank">Welcome page</a> · <a href="THIRD_PARTY_NOTICES.txt" target="_blank">Acknowledgements (third-party notices)</a></p>
+  <script src="options.js"></script>
+</body>
+</html>

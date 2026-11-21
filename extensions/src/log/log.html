@@ -1,0 +1,48 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What Quietfort blocked</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body { width: auto; max-width: 980px; margin: 0 auto; padding: 24px 20px 40px; }
+    h1 { font-size: 20px; margin: 0; }
+    .head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+    select, input[type=search] { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+    select { max-width: 420px; }
+    .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .wrap { overflow-x: auto; padding: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th, td { text-align: left; padding: 7px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+    th { border-top: 0; color: var(--muted); font-weight: 600; font-size: 11.5px; position: sticky; top: 0; background: var(--card); }
+    td.url { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-all; }
+    td.when, td.type { white-space: nowrap; color: var(--muted); }
+    .pill { display: inline-block; font-size: 11px; font-weight: 600; color: #fff; border-radius: 5px; padding: 1px 6px; }
+    .pill.ads { background: #169383; } .pill.trackers { background: #5E5CE6; } .pill.danger { background: #C2408F; } .pill.other { background: var(--muted); }
+    #empty { color: var(--muted); padding: 14px 12px; }
+  </style>
+</head>
+<body>
+  <div class="head">
+    <h1>What was blocked</h1>
+    <div class="tools">
+      <select id="tab" aria-label="Tab"></select>
+      <input type="search" id="filter" placeholder="Filter" aria-label="Filter">
+    </div>
+  </div>
+  <p class="muted" id="summary"></p>
+  <section class="card wrap">
+    <table>
+      <thead><tr><th>Time</th><th>What</th><th>Type</th><th>Address</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p id="empty" hidden>Nothing blocked on this page yet.</p>
+  </section>
+  <p class="muted">Kept in this browser only, for the page currently open in each tab. It updates as the page loads more.</p>
+  <script src="log.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+     Test fixture: a notice-only cookie bar from no known platform. autoconsent
+     has no rule for it; the (runtime-downloaded) cookie list hides it. -->
+<html lang="en"><head><meta charset="utf-8"><title>Leftover notice fixture</title></head>
+<body>
+<h1 id="title">Shop</h1>
+<p id="content">Products.</p>
+<div class="fixture-cookie-bar" id="leftover">This website stores small files on your device. <button id="leftover-ok">OK</button></div>
+<script>
+  window.__clicked = [];
+  document.getElementById('leftover-ok').addEventListener('click', function () { window.__clicked.push('ok'); });
+</script>
+</body></html>

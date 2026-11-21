@@ -1,0 +1,94 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+     Test fixture written for these tests: a Didomi-style consent popup that
+     appears 800 ms after load, with a minimal IAB TCF v2 API (__tcfapi) and
+     Didomi JS API stand-in (no Didomi code). Nonce'd for the strict-CSP host. -->
+<html lang="en"><head><meta charset="utf-8"><title>Didomi/TCF-style consent fixture</title>
+<script nonce="fixture">
+  window.__clicked = [];
+  window.__violations = [];
+  document.addEventListener('securitypolicyviolation', function (e) {
+    window.__violations.push(e.effectiveDirective + ' ' + (e.blockedURI || '') + ' ' + (e.sample || ''));
+  });
+  (function () {
+    var state = { decided: false, consent: false };
+    var listeners = [];
+    function tcData() {
+      var c = {};
+      for (var p = 1; p <= 10; p++) c[p] = state.decided && state.consent;
+      return {
+        tcfPolicyVersion: 4, cmpId: 7, cmpStatus: 'loaded', gdprApplies: true,
+        eventStatus: state.decided ? 'useractioncomplete' : 'cmpuishown',
+        tcString: state.decided ? (state.consent ? 'FIXTURE-ALL' : 'FIXTURE-NONE') : '',
+        purpose: { consents: c, legitimateInterests: {} }, vendor: { consents: {}, legitimateInterests: {} },
+      };
+    }
+    window.__tcfapi = function (cmd, version, cb) {
+      if (typeof cb !== 'function') return;
+      if (cmd === 'ping') cb({ gdprApplies: true, cmpLoaded: true, cmpStatus: 'loaded', displayStatus: state.decided ? 'hidden' : 'visible' }, true);
+      else if (cmd === 'getTCData') cb(tcData(), true);
+      else if (cmd === 'addEventListener') { listeners.push(cb); cb(tcData(), true); }
+      else cb(null, false);
+    };
+    window.__fixtureDecide = function (consent) {
+      state.decided = true;
+      state.consent = consent;
+      listeners.forEach(function (l) { l(tcData(), true); });
+    };
+    window.Didomi = {
+      getCurrentUserStatus: function () {
+        var purposes = {};
+        ['cookies', 'select_basic_ads', 'measure_ad_performance', 'market_research'].forEach(function (id) {
+          purposes[id] = { id: id, enabled: state.decided && state.consent };
+        });
+        return { purposes: purposes, vendors: {} };
+      },
+      setUserDisagreeToAll: function () { window.__decide('disagree-api'); },
+      setUserAgreeToAll: function () { window.__decide('agree-api'); },
+    };
+  })();
+</script>
+<style nonce="fixture">
+  #article { height: 4000px; }
+  body.didomi-popup-open { overflow: hidden !important; }
+  #didomi-popup { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, .6); z-index: 2147483000; display: flex; align-items: center; justify-content: center; }
+  .didomi-popup-container { background: #fff; padding: 24px; max-width: 520px; font: 16px sans-serif; }
+  .didomi-popup-container button { margin: 4px; padding: 8px 12px; }
+</style>
+</head>
+<body>
+<h1 id="title">Le journal</h1>
+<article id="article"><p>Le vrai article.</p></article>
+<script nonce="fixture">
+(function () {
+  window.__decide = function (choice) {
+    window.__clicked.push(choice);
+    window.__fixtureDecide(/^agree/.test(choice));
+    var host = document.getElementById('didomi-host');
+    host.innerHTML = '';
+    host.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('didomi-popup-open');
+  };
+  setTimeout(function () {
+    var host = document.createElement('div');
+    host.id = 'didomi-host';
+    host.setAttribute('aria-hidden', 'false');
+    host.innerHTML =
+      '<div id="didomi-popup" class="didomi-popup-backdrop"><div class="didomi-popup-container">' +
+      '<div class="didomi-popup-notice didomi-notice-banner"><p>Nous et nos 812 partenaires stockons et accédons à des informations sur votre appareil.</p>' +
+      '<button id="didomi-notice-learn-more-button">Paramétrer</button>' +
+      '<button id="didomi-notice-disagree-button">Refuser et fermer</button>' +
+      '<button id="didomi-notice-agree-button">Accepter et fermer</button>' +
+      '</div></div></div>';
+    document.body.appendChild(host);
+    document.body.classList.add('didomi-popup-open');
+    document.getElementById('didomi-notice-agree-button').addEventListener('click', function () { window.__decide('agree'); });
+    document.getElementById('didomi-notice-disagree-button').addEventListener('click', function () { window.__decide('disagree'); });
+    document.getElementById('didomi-notice-learn-more-button').addEventListener('click', function () { window.__clicked.push('learn-more'); });
+  }, 800);
+})();
+</script>
+</body></html>

@@ -1,0 +1,448 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quietfort: a calm, private ad blocker for your browser</title>
+<meta name="description" content="Quietfort blocks ads, trackers, cookie pop-ups and dangerous sites in Chrome, Firefox, Safari, Edge, Brave and more. Free, open source, and nothing you browse ever leaves your device.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1d20" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Quietfort">
+<meta property="og:description" content="A calm, private ad blocker for your browser. Free and open source.">
+<meta property="og:image" content="https://enigmaticzee.github.io/Quietfort-extension/assets/popup-light.png">
+<link rel="icon" type="image/png" href="assets/icon-32.png">
+<link rel="apple-touch-icon" href="assets/icon-128.png">
+<style>
+:root {
+  --bg: #f5f6f4; --bg2: #ecefec; --card: #ffffff; --fg: #12201f; --muted: #5b6866; --line: #dfe4e1;
+  --accent: #169383; --accent-ink: #0d6c60; --accent-soft: #dcefeb; --deep: #0b3c45;
+  --ads: #169383; --trackers: #5e5ce6; --danger: #c2408f; --cookies: #b9822d; --tools: #0a84ff;
+  --shadow: 0 1px 2px rgba(16,40,38,.06), 0 12px 32px rgba(16,40,38,.08);
+  --radius: 18px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1d20; --bg2: #0f262a; --card: #12292d; --fg: #e8f1ef; --muted: #9db1ad; --line: #22403f;
+    --accent: #3cc5b2; --accent-ink: #6fdcca; --accent-soft: #143a38; --deep: #061417;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1d20; --bg2: #0f262a; --card: #12292d; --fg: #e8f1ef; --muted: #9db1ad; --line: #22403f;
+  --accent: #3cc5b2; --accent-ink: #6fdcca; --accent-soft: #143a38; --deep: #061417;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+h1, h2, h3 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif; letter-spacing: -0.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(40px, 6.4vw, 72px); line-height: 1.02; font-weight: 750; }
+h2 { font-size: clamp(30px, 3.8vw, 44px); line-height: 1.1; font-weight: 700; }
+h3 { font-size: 19px; line-height: 1.3; font-weight: 650; letter-spacing: -0.01em; }
+p { margin: 0; }
+.eyebrow { font-size: 13px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
+.lede { font-size: clamp(18px, 2vw, 21px); color: var(--muted); max-width: 34em; }
+
+/* nav */
+.nav { position: sticky; top: 0; z-index: 20; backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  background: color-mix(in srgb, var(--bg) 78%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.nav .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--fg); text-decoration: none; letter-spacing: -0.01em; }
+.mark { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(160deg, #169383, #0b3c45); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); flex: none; }
+.mark svg { width: 16px; height: 19px; }
+.nav nav { display: flex; gap: 22px; margin-left: auto; }
+.nav nav a { color: var(--muted); text-decoration: none; font-size: 15px; font-weight: 500; }
+.nav nav a:hover { color: var(--fg); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 12px 22px; font-weight: 600; font-size: 16px;
+  text-decoration: none; border: 1px solid transparent; transition: transform .15s ease, background .15s ease, box-shadow .15s ease; white-space: nowrap; }
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent); }
+:root[data-theme="dark"] .btn-primary { color: #04211d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn-primary { color: #04211d; } }
+.btn-primary:hover { background: var(--accent-ink); }
+.btn-ghost { color: var(--fg); border-color: var(--line); background: var(--card); }
+.btn-ghost:hover { border-color: var(--accent); }
+.btn-sm { padding: 8px 16px; font-size: 14px; }
+@media (max-width: 760px) { .nav nav { display: none; } .nav .btn { margin-left: auto; } }
+
+/* hero */
+.hero { position: relative; overflow: hidden; padding: 72px 0 40px; }
+.hero::before { content: ""; position: absolute; inset: -30% -10% auto auto; width: 70vw; height: 70vw; max-width: 900px; max-height: 900px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent), transparent 62%); pointer-events: none; }
+.hero .wrap { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; position: relative; }
+.hero-copy > * + * { margin-top: 22px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.badges { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 14px; }
+.badges span { display: inline-flex; align-items: center; gap: 7px; }
+.badges svg { width: 15px; height: 15px; color: var(--accent); }
+.shot-stack { position: relative; justify-self: center; width: min(360px, 100%); }
+.shot { border-radius: 22px; overflow: hidden; background: var(--card); box-shadow: var(--shadow), 0 0 0 1px var(--line); }
+.shot-stack .back { position: absolute; width: 86%; top: 34px; right: -26%; transform: rotate(5deg); opacity: .95; }
+.shot-stack .front { position: relative; transform: rotate(-2deg); }
+@media (max-width: 900px) {
+  .hero { padding-top: 48px; }
+  .hero .wrap { grid-template-columns: 1fr; }
+  .shot-stack { width: min(320px, 82%); margin: 10px auto 0; }
+  .shot-stack .back { right: -18%; }
+}
+
+/* stats strip */
+.strip { padding: 28px 0 8px; }
+.strip .wrap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+.stat b { display: block; font-size: 26px; letter-spacing: -0.02em; }
+.stat span { color: var(--muted); font-size: 14px; }
+@media (max-width: 760px) { .strip .wrap { grid-template-columns: 1fr 1fr; } }
+
+section.block { padding: 96px 0 0; }
+.head { max-width: 720px; margin-bottom: 40px; }
+.head > * + * { margin-top: 14px; }
+
+/* features */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; }
+.card > * + * { margin-top: 10px; }
+.card p { color: var(--muted); font-size: 16px; }
+.tile { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: #fff; }
+.tile svg { width: 21px; height: 21px; }
+.t-ads { background: var(--ads); } .t-trk { background: var(--trackers); } .t-dng { background: var(--danger); }
+.t-ck { background: var(--cookies); } .t-tool { background: var(--tools); } .t-deep { background: var(--deep); }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+
+/* spotlight */
+.spot { display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: center; }
+.spot.flip { grid-template-columns: 1.2fr 1fr; }
+.spot.flip .spot-copy { order: 2; }
+.spot-copy > * + * { margin-top: 16px; }
+.spot-copy ul { margin: 0; padding: 0; list-style: none; }
+.spot-copy li { padding: 10px 0 10px 32px; position: relative; border-top: 1px solid var(--line); color: var(--muted); }
+.spot-copy li b { color: var(--fg); font-weight: 600; }
+.spot-copy li::before { content: ""; position: absolute; left: 4px; top: 17px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent-soft); box-shadow: inset 0 0 0 4px var(--accent); }
+.frame { border-radius: 16px; overflow: hidden; box-shadow: var(--shadow), 0 0 0 1px var(--line); background: var(--card); }
+.frame .bar { height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 14px; background: var(--bg2); border-bottom: 1px solid var(--line); }
+.frame .bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); }
+.frame .bar em { margin-left: 12px; font-style: normal; font-size: 12px; color: var(--muted); background: var(--card); border-radius: 6px; padding: 2px 10px; }
+.themes { display: flex; gap: 14px; }
+.themes figure { margin: 0; flex: 1; }
+.themes figcaption { font-size: 13px; color: var(--muted); text-align: center; margin-top: 10px; }
+@media (max-width: 900px) { .spot, .spot.flip { grid-template-columns: 1fr; } .spot.flip .spot-copy { order: 0; } }
+
+/* downloads */
+.downloads { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.dl { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px; display: flex; flex-direction: column; gap: 14px; }
+.dl header { display: flex; align-items: center; gap: 14px; }
+.engine { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 750; font-size: 18px; color: #fff; flex: none; }
+.e-chrome { background: linear-gradient(150deg, #1a73e8, #0b4fae); }
+.e-firefox { background: linear-gradient(150deg, #ff7139, #c1305d); }
+.e-safari { background: linear-gradient(150deg, #2aa4f4, #0f63c6); }
+.dl h3 { font-size: 21px; }
+.dl .works { color: var(--muted); font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--bg2); color: var(--muted); }
+.dl .status { font-size: 13px; font-weight: 600; color: var(--accent-ink); display: inline-flex; align-items: center; gap: 6px; }
+.dl .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.dl .status.soon { color: var(--muted); }
+.dl .store { font-size: 13px; color: var(--muted); text-align: center; }
+.dl .actions { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+.dl .actions .btn { width: 100%; }
+details.how { border-top: 1px solid var(--line); padding-top: 12px; font-size: 15px; color: var(--muted); }
+details.how summary { cursor: pointer; color: var(--fg); font-weight: 600; font-size: 14px; list-style: none; }
+details.how summary::-webkit-details-marker { display: none; }
+details.how summary::after { content: " +"; color: var(--accent-ink); }
+details.how[open] summary::after { content: " −"; }
+details.how ol { margin: 10px 0 0; padding-left: 20px; }
+details.how li + li { margin-top: 6px; }
+code { font: 0.88em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg2); padding: 1px 6px; border-radius: 6px; }
+@media (max-width: 900px) { .downloads { grid-template-columns: 1fr; } }
+
+/* privacy band */
+.band { margin-top: 96px; background: linear-gradient(160deg, #0f4a4f, #0b2d33 60%, #08191c); color: #e8f4f1; }
+.band .wrap { padding-top: 80px; padding-bottom: 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.band .eyebrow { color: #7fe0d0; }
+.band p.lede { color: #b6d1cc; }
+.band ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.band li { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start; }
+.band li svg { width: 20px; height: 20px; flex: none; color: #7fe0d0; margin-top: 3px; }
+.band li b { display: block; }
+.band li span { color: #b6d1cc; font-size: 15px; }
+.band a { color: #9ff0e2; }
+@media (max-width: 900px) { .band .wrap { grid-template-columns: 1fr; } }
+
+/* faq */
+.faq { display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+.faq details { border-top: 1px solid var(--line); padding: 18px 0; }
+.faq summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; color: var(--accent-ink); font-weight: 500; font-size: 22px; line-height: 1; }
+.faq details[open] summary::after { content: "−"; }
+.faq details p { color: var(--muted); margin-top: 10px; font-size: 16px; }
+@media (max-width: 800px) { .faq { grid-template-columns: 1fr; } }
+
+footer { margin-top: 96px; border-top: 1px solid var(--line); padding: 36px 0 calc(40px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between; }
+footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--fg); }
+.credit { margin-top: 10px; font-size: 13px; max-width: 70ch; }
+:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 3px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Quietfort home">
+      <span class="mark" aria-hidden="true"><svg viewBox="26 24 48 56"><path d="M28 26h8v5h6v-5h16v5h6v-5h8v23c0 15-9.5 24.5-22 29.5C37.5 73.5 28 64 28 49z" fill="#fff"/><rect x="38" y="47" width="24" height="7" rx="3.5" fill="#0B3C45"/></svg></span>
+      Quietfort
+    </a>
+    <nav aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#download">Download</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/EnigmaticZee/Quietfort-extension">GitHub</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="#download">Get Quietfort</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-copy">
+        <p class="eyebrow">Free · Open source · Private by design</p>
+        <h1>The web, without the noise.</h1>
+        <p class="lede">Quietfort blocks ads, trackers, cookie pop-ups and dangerous sites in your browser. It's fast, it stays out of your way, and nothing you browse ever leaves your device.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="#download">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12m0 0l-5-5m5 5l5-5M5 20h14"/></svg>
+            Download for free
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/EnigmaticZee/Quietfort-extension">View the code</a>
+        </div>
+        <div class="badges">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Chrome, Firefox, Safari</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>Edge, Brave, Opera, Vivaldi</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>No account, no tracking</span>
+        </div>
+      </div>
+      <div class="shot-stack" aria-label="The Quietfort panel in light and dark themes">
+        <picture><source srcset="assets/popup-light.png" media="(prefers-color-scheme: dark)"><img class="shot back" src="assets/popup-fortNight.png" alt="" width="360" height="447"></picture>
+        <picture><source srcset="assets/popup-fortNight.png" media="(prefers-color-scheme: dark)"><img class="shot front" src="assets/popup-light.png" alt="The Quietfort panel: blocking on for this site, 5 blocked on this page, cookie banners rejected, and buttons for Hide an element, Zap and Site broken?" width="360" height="447"></picture>
+      </div>
+    </div>
+  </section>
+
+  <section class="strip" aria-label="At a glance">
+    <div class="wrap">
+      <div class="stat"><b>Daily</b><span>filter list updates</span></div>
+      <div class="stat"><b>0 bytes</b><span>of your browsing sent anywhere</span></div>
+      <div class="stat"><b>3 themes</b><span>Light, Fort Night, Graphite</span></div>
+      <div class="stat"><b>MPL-2.0</b><span>free and open source</span></div>
+    </div>
+  </section>
+
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">What it does</p>
+        <h2>Everything you'd expect. A few things you wouldn't.</h2>
+        <p class="lede">Quietfort uses the same trusted filter lists as the best blockers, then adds tools for the bits of the web that lists can't fix.</p>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <div class="tile t-ads" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 4l16 16"/></svg></div>
+          <h3>Ads, gone</h3>
+          <p>Banners, pop-ups, pop-unders and video ads, including the ones that try to sneak back in after the page loads.</p>
+        </article>
+        <article class="card">
+          <div class="tile t-trk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></svg></div>
+          <h3>Trackers stopped</h3>
+          <p>Analytics beacons, fingerprinting scripts and tracking pixels are blocked before they load. Global Privacy Control is on by default.</p>
+        </article>
+        <article class="card">
+          <div class="tile t-ck" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 109 9 3 3 0 01-3-3 3 3 0 01-3-3 3 3 0 01-3-3z"/><circle cx="9" cy="12" r=".8" fill="currentColor"/><circle cx="14" cy="15" r=".8" fill="currentColor"/></svg></div>
+          <h3>Cookie banners, rejected</h3>
+          <p>Quietfort answers consent pop-ups for you, always choosing "reject" or "necessary only", never "accept".</p>
+        </article>
+        <article class="card">
+          <div class="tile t-dng" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 8v5M12 16.5v.5"/></svg></div>
+          <h3>Dangerous sites, flagged</h3>
+          <p>Known phishing, scam and malware sites get a clear warning page first, so one wrong click doesn't cost you.</p>
+        </article>
+        <article class="card">
+          <div class="tile t-tool" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></div>
+          <h3>Zap and hide</h3>
+          <p>Click anything to remove it for this visit, or hide it on that site for good. Or just describe it: "the newsletter pop-up".</p>
+        </article>
+        <article class="card">
+          <div class="tile t-deep" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5a4 4 0 004.9 4.9L11 19a2.1 2.1 0 01-3-3l8.6-8.4a4 4 0 00-2.1-2.1z"/></svg></div>
+          <h3>Site broken? One button.</h3>
+          <p>If a page stops working, Quietfort finds the exact rule that broke it and switches only that one off, not your whole protection.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap spot">
+      <div class="spot-copy">
+        <p class="eyebrow">Zap mode</p>
+        <h2>See something you don't want? Click it away.</h2>
+        <p class="lede">Turn on Zap from the panel or the right-click menu, then click the things you'd rather not see. They vanish at once and come back when you reload.</p>
+        <ul>
+          <li><b>Undo</b> any removal with one click or ⌘Z.</li>
+          <li><b>Nothing is saved.</b> For a permanent fix, use Hide an element.</li>
+          <li><b>Links don't fire</b> while zapping, so you never open a page by accident.</li>
+        </ul>
+      </div>
+      <div class="frame">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><em>www.example.com</em></div>
+        <img src="assets/zap.jpg" alt="Zap mode on a news page: the element under the pointer is outlined in teal, and a small bar at the bottom says Click anything to remove it until you reload, with Undo and Done buttons" width="1280" height="860" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap spot flip">
+      <div class="spot-copy">
+        <p class="eyebrow">Calm by design</p>
+        <h2>Out of your way, until you need it.</h2>
+        <p class="lede">One panel shows what matters on the page you're on. Short labels, no clutter, and three themes to match your setup.</p>
+        <ul>
+          <li><b>Pause everywhere</b> for an hour, until tomorrow, or until you resume.</li>
+          <li><b>Trusted sites</b>, your own rules, and a log of what was blocked.</li>
+          <li><b>Backup and restore</b> your settings in one file.</li>
+        </ul>
+      </div>
+      <div class="themes">
+        <figure><img class="shot" src="assets/popup-light.png" alt="The panel in the Light theme" width="360" height="447" ><figcaption>Light</figcaption></figure>
+        <figure><img class="shot" src="assets/popup-fortNight.png" alt="The panel in the Fort Night theme" width="360" height="447" ><figcaption>Fort Night</figcaption></figure>
+        <figure><img class="shot" src="assets/popup-graphite.png" alt="The panel in the Graphite theme" width="360" height="447" ><figcaption>Graphite</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="privacy">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Privacy</p>
+        <h2>Your browsing stays yours.</h2>
+        <p class="lede" style="margin-top:16px">A blocker sees every page you open, so it has to be trustworthy. Quietfort runs entirely in your browser, and its code is public so anyone can check.</p>
+        <p style="margin-top:18px"><a href="privacy.html">Read the privacy policy →</a></p>
+      </div>
+      <ul>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><div><b>Everything happens on your device</b><span>Filtering, page clean-up and the optional AI features all run locally.</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M9.9 5.1A9.8 9.8 0 0112 5c6 0 10 7 10 7a17 17 0 01-3.2 3.9M6.6 6.6A17 17 0 002 12s4 7 10 7a9.6 9.6 0 005.4-1.6"/></svg><div><b>No accounts, analytics or ads</b><span>We don't collect what you browse or what gets blocked. There's nothing to sell.</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg><div><b>Open source</b><span>Released under the Mozilla Public License 2.0. Read it, build it, improve it.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block" id="download">
+    <div class="wrap">
+      <div class="head">
+        <p class="eyebrow">Download</p>
+        <h2>Get Quietfort for your browser.</h2>
+        <p class="lede">Store listings are on the way. Until then you can install the latest release directly; it takes about a minute.</p>
+      </div>
+      <div class="downloads">
+        <article class="dl">
+          <header><span class="engine e-chrome" aria-hidden="true">C</span><div><h3>Chrome &amp; friends</h3><p class="works">Chrome and every browser built on it</p></div></header>
+          <div class="chips"><span class="chip">Chrome</span><span class="chip">Edge</span><span class="chip">Brave</span><span class="chip">Opera</span><span class="chip">Vivaldi</span></div>
+          <span class="status">Ready to install</span>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://github.com/EnigmaticZee/Quietfort-extension/releases/latest/download/quietfort-chrome.zip">Download for Chrome</a>
+            <span class="store">Chrome Web Store: coming soon</span>
+          </div>
+          <details class="how"><summary>How to install</summary>
+            <ol>
+              <li>Unzip <code>quietfort-chrome.zip</code>.</li>
+              <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>, <code>brave://extensions</code>…) and turn on <b>Developer mode</b>.</li>
+              <li>Click <b>Load unpacked</b> and choose the unzipped folder. Pin Quietfort to your toolbar.</li>
+            </ol>
+          </details>
+        </article>
+        <article class="dl">
+          <header><span class="engine e-firefox" aria-hidden="true">F</span><div><h3>Firefox</h3><p class="works">Firefox and browsers built on it</p></div></header>
+          <div class="chips"><span class="chip">Firefox</span><span class="chip">LibreWolf</span><span class="chip">Zen</span><span class="chip">Floorp</span></div>
+          <span class="status">Ready to try</span>
+          <div class="actions">
+            <a class="btn btn-ghost" href="https://github.com/EnigmaticZee/Quietfort-extension/releases/latest/download/quietfort-firefox.zip">Download for Firefox</a>
+            <span class="store">Firefox Add-ons: coming soon</span>
+          </div>
+          <details class="how"><summary>How to try it now</summary>
+            <ol>
+              <li>Open <code>about:debugging#/runtime/this-firefox</code>.</li>
+              <li>Click <b>Load Temporary Add-on</b> and pick <code>quietfort-firefox.zip</code>.</li>
+              <li>Firefox removes temporary add-ons when it restarts. The Add-ons listing will install permanently.</li>
+            </ol>
+          </details>
+        </article>
+        <article class="dl">
+          <header><span class="engine e-safari" aria-hidden="true">S</span><div><h3>Safari</h3><p class="works">Safari on macOS</p></div></header>
+          <div class="chips"><span class="chip">Safari 17+</span><span class="chip">macOS</span></div>
+          <span class="status soon">For developers today</span>
+          <div class="actions">
+            <a class="btn btn-ghost" href="https://github.com/EnigmaticZee/Quietfort-extension#safari">Build from source</a>
+            <span class="store">Mac App Store: coming soon</span>
+          </div>
+          <details class="how"><summary>Why the App Store?</summary>
+            <p style="margin-top:10px">Safari only runs extensions that come inside a signed Mac app. Quietfort's small companion app also holds the extra rule sets that let Safari block as much as the other browsers.</p>
+          </details>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="faq">
+    <div class="wrap">
+      <div class="head"><p class="eyebrow">Questions</p><h2>Good to know</h2></div>
+      <div class="faq">
+        <div>
+          <details><summary>Is Quietfort really free?</summary><p>Yes. No trial, no subscription, and no ads let through for money. The code is open source under the MPL-2.0.</p></details>
+          <details><summary>Will it slow my browser down?</summary><p>No. Blocking happens inside the browser's own fast filtering engine, and because ads and trackers never load, most pages finish sooner.</p></details>
+          <details><summary>A site broke. What do I do?</summary><p>Open the panel and press <b>Site broken?</b>. Quietfort finds the rule causing the problem and turns off only that one. You can also switch blocking off for the site with one toggle.</p></details>
+        </div>
+        <div>
+          <details><summary>Where do the filter lists come from?</summary><p>From their volunteer maintainers: EasyList, EasyPrivacy, the uBlock Origin and AdGuard lists, and others. Your browser downloads them directly; they're credited in the extension's notices.</p></details>
+          <details><summary>What do the AI features do?</summary><p>They're optional and off by default. Where your browser has an on-device model, it helps find ads and pop-ups you describe in plain words. It runs on your device; nothing is sent anywhere.</p></details>
+          <details><summary>How do I report a problem?</summary><p>Open an issue on <a href="https://github.com/EnigmaticZee/Quietfort-extension/issues">GitHub</a>. For security problems, please use the private report form described in <a href="https://github.com/EnigmaticZee/Quietfort-extension/blob/main/SECURITY.md">SECURITY.md</a>.</p></details>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="brand" href="#top"><span class="mark" aria-hidden="true"><svg viewBox="26 24 48 56"><path d="M28 26h8v5h6v-5h16v5h6v-5h8v23c0 15-9.5 24.5-22 29.5C37.5 73.5 28 64 28 49z" fill="#fff"/><rect x="38" y="47" width="24" height="7" rx="3.5" fill="#0B3C45"/></svg></span>Quietfort</a>
+      <p class="credit">Filter lists by their volunteer maintainers, downloaded to your browser and never modified. Cookie-banner rules by DuckDuckGo's autoconsent (MPL-2.0).</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/EnigmaticZee/Quietfort-extension">Source code</a>
+      <a href="https://github.com/EnigmaticZee/Quietfort-extension/releases">Releases</a>
+      <a href="https://github.com/EnigmaticZee/Quietfort-extension/blob/main/LICENSE">MPL-2.0 licence</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+# Runs on every push and pull request. Browser end-to-end suites are manual
+# (Actions tab → CI → Run workflow → tick "browser e2e"), because they are slow
+# and depend on the Chrome/Firefox versions on GitHub's macOS image.
+#
+# Actions are pinned to full commit SHAs (verified with `git ls-remote` on
+# 2026-11-16); Dependabot (.github/dependabot.yml) proposes updates weekly.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      browser_e2e:
+        description: "Also run the browser e2e suites (Chrome, Firefox)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  extensions:
+    name: Extensions (unit, lint, licences)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: extensions
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: extensions/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run lint:firefox
+      - run: npm run licenses
+      - run: npm audit --omit=dev
+
+  browser-e2e:
+    name: Browser e2e (manual)
+    if: github.event_name == 'workflow_dispatch' && inputs.browser_e2e
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: extensions
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: extensions/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      # GitHub's macOS image ships Google Chrome and Firefox in /Applications.
+      - run: npm run test:e2e:chrome
+      - run: npm run test:e2e:firefox
+        if: success() || failure()

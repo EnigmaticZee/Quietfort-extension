@@ -1,0 +1,88 @@
+# Daily security scan. If any shipped npm package has a published
+# advisory, this opens an issue labelled "security-alert" (or comments on the
+# one already open) — GitHub emails the repo owner about it. When a later run
+# is clean again, the issue is closed automatically.
+#
+# Uses only the built-in GITHUB_TOKEN. Actions pinned to commit SHAs verified
+# with `git ls-remote` on 2026-11-16.
+name: Security scan
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # every day, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: security-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Scan
+        id: scan
+        run: |
+          status=0
+          : > report.md
+          for pkg in extensions/package.json tools/*/package.json; do
+            dir=$(dirname "$pkg")
+            # Only what we ship/run (no dev dependencies); --package-lock-only needs no install.
+            if ! out=$(cd "$dir" && npm audit --omit=dev --package-lock-only 2>&1); then
+              status=1
+              { echo "### npm: \`$dir\`"; echo; echo '```'; echo "$out" | tail -60; echo '```'; echo; } >> report.md
+            fi
+          done
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          cat report.md
+
+      - name: Open or update the alert issue
+        if: steps.scan.outputs.status == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create security-alert --color B60205 --description "Opened by the daily security scan" --force >/dev/null
+          {
+            echo "The daily security scan found a published security advisory affecting this project ($(date -u +%F))."
+            echo
+            echo "**What to do:** update or replace the affected package, run the tests, and close this issue."
+            echo
+            cat report.md
+            echo "Run: $RUN_URL"
+          } > body.md
+          num=$(gh issue list --label security-alert --state open --json number --jq '.[0].number // empty')
+          if [ -z "$num" ]; then
+            url=$(gh issue create --title "Security alert: vulnerable dependency" --label security-alert --body-file body.md)
+            num=${url##*/}
+            sed -i "s/#ISSUE/#$num/" body.md
+            gh issue edit "$num" --body-file body.md
+          else
+            sed -i "s/#ISSUE/#$num/" body.md
+            # Comment only when the findings changed, so the owner isn't emailed daily about the same thing.
+            last=$(gh issue view "$num" --json body,comments --jq '(.comments | last | .body) // .body')
+            strip() { grep -vE '^(Run:|The daily security scan found)'; }
+            if [ "$(echo "$last" | strip)" != "$(strip < body.md)" ]; then
+              gh issue comment "$num" --body-file body.md
+            fi
+          fi
+          exit 1
+
+      - name: Close the alert issue when clean again
+        if: steps.scan.outputs.status == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for num in $(gh issue list --label security-alert --state open --json number --jq '.[].number' 2>/dev/null); do
+            gh issue close "$num" --comment "The daily security scan is clean again ($(date -u +%F)). Closing automatically."
+          done

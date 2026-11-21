@@ -1,0 +1,35 @@
+{
+  "name": "quietfort-extension",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MPL-2.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit -p .",
+    "test": "npm run typecheck && npm run build && npm run test:unit",
+    "test:unit": "node --test --experimental-strip-types test/unit/*.test.ts",
+    "test:e2e:chrome": "node scripts/build.mjs chrome && node test/e2e/chrome.e2e.mjs",
+    "test:e2e:safari": "node test/e2e/safari.e2e.mjs",
+    "test:e2e:nano": "node scripts/build.mjs chrome && node test/e2e/nano.e2e.mjs",
+    "test:e2e:nano-real": "node scripts/build.mjs chrome && node test/e2e/nano-real.e2e.mjs",
+    "test:e2e:firefox": "node scripts/build.mjs firefox --e2e-lists=http://lists.test/fixture.txt,easylist-cookie=http://lists.test/cookie.txt && node test/e2e/firefox.e2e.mjs",
+    "test:smoke": "node scripts/build.mjs chrome firefox && node test/e2e/smoke.mjs",
+    "lint:firefox": "node scripts/build.mjs firefox && node scripts/lint-firefox.mjs",
+    "licenses": "node scripts/check-licenses.mjs",
+    "build:safari": "node scripts/build.mjs safari && cd \"safari-app/AdBlocker Companion\" && DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project \"AdBlocker Companion.xcodeproj\" -scheme \"AdBlocker Companion\" -configuration Debug -derivedDataPath ../build DEVELOPMENT_TEAM=G39T62RW4Q CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates build",
+    "test:real-sites": "node test/e2e/real-sites-proxy.mjs",
+    "test:runtime": "node test/e2e/runtime-scriptlets.mjs",
+    "test:e2e:extras": "node scripts/build.mjs chrome && node test/e2e/extras.e2e.mjs"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^25.17.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@duckduckgo/autoconsent": "18.5.0"
+  }
+}

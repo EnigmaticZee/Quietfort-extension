@@ -1,0 +1,14 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+     Test fixture: a consent platform's iframe (cdn.privacy-mgmt.com, the
+     Sourcepoint message host) next to an ordinary video iframe. Only the
+     consent iframe may get the cookie-banner handler. -->
+<html lang="en"><head><meta charset="utf-8"><title>Frames fixture</title></head>
+<body>
+<h1 id="title">Video page</h1>
+<iframe id="cmp-frame" src="http://cdn.privacy-mgmt.com/index.html?message_id=1" width="400" height="200"></iframe>
+<iframe id="video-frame" src="http://player.videohost.test/embed/1" width="400" height="200"></iframe>
+</body></html>
