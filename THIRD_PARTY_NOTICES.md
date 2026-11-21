@@ -78,3 +78,11 @@ builds published in AdGuard's FiltersRegistry repository on GitHub (the
 Our support for these lists' syntax (scriptlets, redirect resources, options)
 was written from scratch from public documentation; no uBlock Origin or AdGuard
 source code was used.
+
+## Browser logos (website only)
+
+The website (`site/assets/browsers/`) shows the Chrome, Firefox, Safari, Edge,
+Brave, Opera and Vivaldi logos, taken unmodified from
+https://github.com/alrra/browser-logos (MIT). The logos are trademarks of their
+owners and are used only to show which browsers Quietfort works in. They are not
+part of the extension.
