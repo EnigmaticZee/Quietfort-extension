@@ -16,10 +16,11 @@
 <meta property="og:image" content="https://enigmaticzee.github.io/Quietfort-extension/assets/popup-light.png">
 <link rel="icon" type="image/png" href="assets/icon-32.png">
 <link rel="apple-touch-icon" href="assets/icon-128.png">
+<script>document.documentElement.classList.add('js')</script>
 <style>
 :root {
   --bg: #f5f6f4; --bg2: #ecefec; --card: #ffffff; --fg: #12201f; --muted: #5b6866; --line: #dfe4e1;
-  --accent: #169383; --accent-ink: #0d6c60; --accent-soft: #dcefeb; --deep: #0b3c45;
+  --accent: #169383; --on-accent: #ffffff; --accent-ink: #0d6c60; --accent-soft: #dcefeb; --deep: #0b3c45;
   --ads: #169383; --trackers: #5e5ce6; --danger: #c2408f; --cookies: #b9822d; --tools: #0a84ff;
   --shadow: 0 1px 2px rgba(16,40,38,.06), 0 12px 32px rgba(16,40,38,.08);
   --radius: 18px;
@@ -28,18 +29,19 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0b1d20; --bg2: #0f262a; --card: #12292d; --fg: #e8f1ef; --muted: #9db1ad; --line: #22403f;
-    --accent: #3cc5b2; --accent-ink: #6fdcca; --accent-soft: #143a38; --deep: #061417;
+    --accent: #3cc5b2; --on-accent: #04211d; --accent-ink: #6fdcca; --accent-soft: #143a38; --deep: #061417;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px rgba(0,0,0,.35);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0b1d20; --bg2: #0f262a; --card: #12292d; --fg: #e8f1ef; --muted: #9db1ad; --line: #22403f;
-  --accent: #3cc5b2; --accent-ink: #6fdcca; --accent-soft: #143a38; --deep: #061417;
+  --accent: #3cc5b2; --on-accent: #04211d; --accent-ink: #6fdcca; --accent-soft: #143a38; --deep: #061417;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px rgba(0,0,0,.35);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0; background: var(--bg); color: var(--fg);
@@ -219,6 +221,155 @@ footer a:hover { color: var(--fg); }
 .credit { margin-top: 10px; font-size: 13px; max-width: 70ch; }
 :focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 3px; border-radius: 6px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .btn { transition: none; } }
+
+/* motion */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1); }
+.js .reveal.in { opacity: 1; transform: none; }
+.js .grid .card.reveal:nth-child(3n+2) { transition-delay: .08s; }
+.js .grid .card.reveal:nth-child(3n) { transition-delay: .16s; }
+@keyframes qf-float { 0%, 100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(-2deg) translateY(-8px); } }
+@keyframes qf-float-back { 0%, 100% { transform: rotate(5deg) translateY(0); } 50% { transform: rotate(5deg) translateY(6px); } }
+.shot-stack .front { animation: qf-float 7s ease-in-out infinite; }
+.shot-stack .back { animation: qf-float-back 7s ease-in-out infinite; }
+.card { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+.grid .card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+
+/* product clips */
+.clip { display: block; width: 100%; height: auto; background: var(--card); }
+.clip-wrap { position: relative; }
+.clip-toggle { position: absolute; right: 12px; bottom: 12px; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 88%, transparent); color: var(--fg); display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(8px); }
+.clip-toggle svg { width: 16px; height: 16px; }
+.clip-toggle:focus-visible, .demo button:focus-visible, .demo input:focus-visible, .demo [data-zap]:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 2px; }
+
+/* demo */
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.demo-browser { scroll-margin-top: 80px; }
+.demo-note { margin-top: 16px; font-size: 14px; color: var(--muted); max-width: 46em; }
+.demo-bar { position: relative; }
+.demo-bar em { flex: 1; max-width: 260px; }
+.demo-reload { margin-left: 6px; width: 26px; height: 26px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.demo-reload:hover { background: var(--card); color: var(--fg); }
+.demo-reload svg { width: 15px; height: 15px; }
+.demo-ext { margin-left: auto; display: inline-flex; align-items: center; position: relative; }
+.mark.mini { width: 22px; height: 22px; border-radius: 6px; }
+.mark.mini svg { width: 11px; height: 13px; }
+.demo-ext b { position: absolute; right: -8px; top: -4px; min-width: 17px; height: 15px; padding: 0 4px; border-radius: 8px; font-size: 10px; line-height: 15px; text-align: center;
+  background: var(--accent); color: var(--on-accent); transition: transform .25s ease; }
+.demo[data-blocking="off"] .demo-ext b { background: var(--muted); }
+.demo-ext b.bump { transform: scale(1.25); }
+
+.demo-page { --pg: var(--card); --pg-fg: var(--fg); --pg-muted: var(--muted); --pg-line: var(--line);
+  position: relative; height: 470px; overflow: hidden; background: var(--pg); color: var(--pg-fg); font: 15px/1.5 Georgia, "Times New Roman", serif; }
+.dp-head { display: flex; align-items: baseline; gap: 18px; padding: 14px 22px; border-bottom: 1px solid var(--pg-line); font-family: system-ui, -apple-system, sans-serif; }
+.dp-logo { font: 700 21px Georgia, serif; letter-spacing: -.01em; }
+.dp-nav { font-size: 13px; color: var(--pg-muted); font-weight: 600; }
+.dp-body { display: grid; grid-template-columns: minmax(0, 1fr) 190px; gap: 22px; padding: 16px 22px; }
+.dp-kicker { font: 700 11px system-ui, sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #b03a3a; }
+.dp-title { font: 700 24px/1.15 Georgia, serif; letter-spacing: -.01em; margin: 4px 0 10px; }
+.dp-img { height: 120px; border-radius: 6px; background: linear-gradient(135deg, #9cc9c0, #3f7f86 55%, #22424f); }
+.dp-text { margin-top: 10px; color: var(--pg-fg); }
+.dp-card { border: 1px solid var(--pg-line); border-radius: 8px; padding: 10px 12px; font: 13px/1.5 system-ui, sans-serif; color: var(--pg-muted); }
+.dp-card b { display: block; color: var(--pg-fg); }
+.dp-ad { display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 13px system-ui, sans-serif; color: #3b2a00; overflow: hidden;
+  background: repeating-linear-gradient(135deg, #ffe58a 0 14px, #ffd84d 14px 28px); border: 1px solid #e2b800; border-radius: 6px;
+  transition: max-height .45s ease, opacity .35s ease, margin .45s ease, padding .45s ease, border-width .45s ease; }
+.dp-ad small { font: 700 9px system-ui, sans-serif; letter-spacing: .08em; background: #3b2a00; color: #ffe58a; padding: 2px 5px; border-radius: 3px; }
+.dp-ad span { background: #c0392b; color: #fff; padding: 4px 9px; border-radius: 5px; }
+.dp-lead { margin: 12px 22px 0; max-height: 64px; height: 64px; }
+.dp-box { flex-direction: column; text-align: center; height: 150px; max-height: 150px; margin-bottom: 12px; padding: 10px; }
+.dp-box b { font-size: 15px; }
+.demo[data-blocking="on"] .dp-ad:not(.shown) { max-height: 0; opacity: 0; margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
+.dp-news { position: absolute; right: 16px; bottom: 16px; width: 230px; background: var(--pg); border: 1px solid var(--pg-line); border-radius: 10px; padding: 12px 14px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.18); font: 13px/1.45 system-ui, sans-serif; color: var(--pg-muted); }
+.dp-news b { display: block; color: var(--pg-fg); font-size: 14px; }
+.dp-btn { display: block; width: fit-content; margin-top: 8px; background: #a33; color: #fff; padding: 5px 11px; border-radius: 6px; font-weight: 600; }
+.dp-chat { position: absolute; left: 16px; bottom: 16px; width: 44px; height: 44px; border-radius: 50%; background: #3b6fd8; color: #fff; display: grid; place-items: center; box-shadow: 0 8px 20px rgba(0,0,0,.2); }
+.dp-chat svg { width: 20px; height: 20px; }
+.dp-cookie { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px;
+  background: #1f2a2e; color: #e9eeee; font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 12px 30px rgba(0,0,0,.3);
+  transform: translateY(140%); transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+.dp-cookie.up { transform: none; }
+.dp-cookie p { flex: 1; min-width: 0; }
+.dp-cookie b { display: block; }
+.dp-cookie div { display: flex; gap: 8px; flex: none; }
+.dp-cookie button { font: 600 12.5px system-ui, sans-serif; padding: 7px 11px; border-radius: 7px; border: 1px solid #55666a; background: transparent; color: inherit; cursor: pointer; }
+.dp-cookie button[data-cookie="accept"] { background: #e9eeee; color: #1f2a2e; border-color: #e9eeee; }
+.dp-cookie button.press { box-shadow: 0 0 0 3px var(--accent); }
+.dp-toast { position: absolute; left: 50%; top: 64px; z-index: 4; transform: translate(-50%, -8px); opacity: 0; pointer-events: none;
+  background: var(--deep); color: #e8f4f1; font: 600 13px system-ui, sans-serif; padding: 8px 14px; border-radius: 999px; transition: opacity .3s ease, transform .3s ease; white-space: nowrap; }
+.dp-toast.show { opacity: 1; transform: translate(-50%, 0); }
+[data-zap].gone { display: none !important; }
+[data-zap].fading { opacity: 0; transform: scale(.96); transition: opacity .22s ease, transform .22s ease; }
+.demo[data-zap="on"] .demo-page [data-zap] { cursor: crosshair; }
+.demo[data-zap="on"] .demo-page [data-zap]:hover, .demo[data-zap="on"] .demo-page [data-zap].target { outline: 2px solid var(--accent); outline-offset: 1px; background-color: color-mix(in srgb, var(--accent) 16%, transparent); }
+[data-zap].found { outline: 2px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); }
+.dp-zapbar { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 5; margin: 0 auto; width: fit-content; max-width: calc(100% - 24px); display: flex; align-items: center; gap: 8px;
+  background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 7px 7px 7px 12px; font: 13px/1.3 system-ui, sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,.22); }
+.dp-zapbar > span:first-child { min-width: 0; }
+.dp-count { color: var(--muted); white-space: nowrap; }
+.dp-zapbar button { font: 600 12.5px system-ui, sans-serif; padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer; flex: none; }
+.dp-zapbar button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.dp-zapbar button:disabled { opacity: .45; cursor: default; }
+
+.demo-panel { background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; position: sticky; top: 84px; }
+.dpn-card { background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; }
+.dpn-site { display: flex; align-items: center; gap: 10px; }
+.dpn-site > div { flex: 1; min-width: 0; }
+.dpn-site b { display: block; font-size: 14.5px; }
+.dpn-site span:not(.mark) { color: var(--muted); font-size: 12.5px; }
+.dpn-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dpn-counts b { display: block; font-size: 22px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.dpn-counts span { color: var(--muted); font-size: 12.5px; }
+.dpn-row { display: flex; align-items: center; gap: 10px; }
+.dpn-row > span:nth-child(2) { flex: 1; }
+.mini-tile { width: 26px; height: 26px; border-radius: 7px; }
+.mini-tile svg { width: 15px; height: 15px; }
+.dpn-sw { flex: none; width: 42px; height: 25px; border-radius: 999px; border: 0; padding: 0; background: var(--line); position: relative; cursor: pointer; transition: background .2s ease; }
+.dpn-sw span { position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s ease; }
+.dpn-sw[aria-checked="true"] { background: var(--accent); }
+.dpn-sw[aria-checked="true"] span { transform: translateX(17px); }
+.dpn-zap { display: flex; align-items: center; justify-content: center; gap: 8px; font: inherit; font-weight: 600; padding: 11px; border-radius: 11px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+.dpn-zap svg { width: 16px; height: 16px; color: var(--accent-ink); }
+.dpn-zap[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.dpn-zap[aria-pressed="true"] svg { color: var(--on-accent); }
+.dpn-describe { display: flex; gap: 8px; }
+.dpn-describe input { flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+.dpn-describe button { font: inherit; font-weight: 600; padding: 9px 13px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+.dpn-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dpn-chips button { font: 600 12.5px system-ui, sans-serif; padding: 5px 10px; border-radius: 999px; border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); background: transparent; color: var(--accent-ink); cursor: pointer; }
+.dpn-status { font-size: 13px; color: var(--muted); min-height: 2.8em; padding: 0 2px; }
+@media (max-width: 960px) {
+  .demo { grid-template-columns: 1fr; }
+  .demo-panel { position: static; }
+}
+@media (max-width: 560px) {
+  .demo-page { height: 520px; }
+  .dp-body { grid-template-columns: 1fr; padding: 12px 14px; }
+  .dp-side { display: none; }
+  .dp-head { padding: 12px 14px; }
+  .dp-nav { display: none; }
+  .dp-lead { margin: 10px 14px 0; height: 56px; max-height: 56px; font-size: 12px; }
+  .dp-lead span { display: none; }
+  .dp-title { font-size: 21px; }
+  .dp-news { left: 70px; right: 12px; width: auto; bottom: 12px; }
+  .dp-chat { left: 12px; bottom: 12px; }
+  .dp-cookie { flex-direction: column; align-items: stretch; gap: 10px; }
+  .dp-cookie div button { flex: 1; }
+  .dp-zapbar > span:first-child { font-size: 12px; }
+  .dp-toast { top: 56px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+  .shot-stack .front { animation: none; transform: rotate(-2deg); }
+  .shot-stack .back { animation: none; transform: rotate(5deg); }
+  .grid .card:hover { transform: none; }
+  .demo *, .demo *::before, .demo *::after { transition: none !important; animation: none !important; }
+}
 </style>
 </head>
 <body>
@@ -230,7 +381,8 @@ footer a:hover { color: var(--fg); }
       Quietfort
     </a>
     <nav aria-label="Sections">
-      <a href="#features">Features</a>
+      <a href="#try">Try it</a>
+        <a href="#features">Features</a>
       <a href="#privacy">Privacy</a>
       <a href="#download">Download</a>
       <a href="#faq">FAQ</a>
@@ -261,8 +413,8 @@ footer a:hover { color: var(--fg); }
         </div>
       </div>
       <div class="shot-stack" aria-label="The Quietfort panel in light and dark themes">
-        <picture><source srcset="assets/popup-light.png" media="(prefers-color-scheme: dark)"><img class="shot back" src="assets/popup-fortNight.png" alt="" width="360" height="447"></picture>
-        <picture><source srcset="assets/popup-fortNight.png" media="(prefers-color-scheme: dark)"><img class="shot front zoomable" src="assets/popup-light.png" alt="The Quietfort panel: blocking on for this site, 5 blocked on this page, cookie banners rejected, and buttons for Hide an element, Zap and Site broken?" width="360" height="447"></picture>
+        <picture><source srcset="assets/popup-light.png" media="(prefers-color-scheme: dark)"><img class="shot back" src="assets/popup-fortNight.png" alt="" width="340" height="464"></picture>
+        <picture><source srcset="assets/popup-fortNight.png" media="(prefers-color-scheme: dark)"><img class="shot front zoomable" src="assets/popup-light.png" alt="The Quietfort panel: blocking on for this site, 5 blocked on this page, cookie banners rejected, and buttons for Hide an element, Zap and Site broken?" width="340" height="464"></picture>
       </div>
     </div>
   </section>
@@ -276,40 +428,121 @@ footer a:hover { color: var(--fg); }
     </div>
   </section>
 
+  <section class="block" id="try" aria-labelledby="try-title">
+    <div class="wrap">
+      <div class="head reveal">
+        <p class="eyebrow">Try it here</p>
+        <h2 id="try-title">Have a go. No install needed.</h2>
+        <p class="lede">A pretend news page with the usual clutter, and a working copy of the Quietfort panel. Switch blocking off and on, zap things, or describe what to hide.</p>
+      </div>
+      <div class="demo reveal" id="demo" data-blocking="on" data-zap="off">
+        <div class="demo-browser frame">
+          <div class="bar demo-bar">
+            <i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>
+            <em>www.example.com</em>
+            <button type="button" class="demo-reload" id="demo-reload" aria-label="Reload the pretend page" title="Reload">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>
+            </button>
+            <span class="demo-ext" aria-hidden="true"><span class="mark mini"><svg viewBox="26 24 48 56"><path d="M28 26h8v5h6v-5h16v5h6v-5h8v23c0 15-9.5 24.5-22 29.5C37.5 73.5 28 64 28 49z" fill="#fff"/><rect x="38" y="47" width="24" height="7" rx="3.5" fill="#0B3C45"/></svg></span><b id="demo-badge">0</b></span>
+          </div>
+          <div class="demo-page" id="demo-page" aria-label="Pretend news page">
+            <div class="dp-head"><span class="dp-logo">The Daily Example</span><span class="dp-nav">World · Business · Tech</span></div>
+            <div class="dp-ad dp-lead" data-ad data-zap="the banner ad"><small>AD</small>Flash sale: everything 70% off<span>Shop now</span></div>
+            <div class="dp-body">
+              <article class="dp-article">
+                <p class="dp-kicker" data-zap="the section label">Cities</p>
+                <h3 class="dp-title" data-zap="the headline">The quiet streets plan: how one town took back its high street</h3>
+                <div class="dp-img" data-zap="the photo" role="img" aria-label="Photo"></div>
+                <p class="dp-text" data-zap="a paragraph">When the council closed the old market road to traffic, few expected it to stick. Two years later, cafés line the pavement.</p>
+              </article>
+              <aside class="dp-side">
+                <div class="dp-ad dp-box" data-ad data-zap="the sidebar ad"><small>AD</small><b>You won't believe this one trick</b><span>Learn more</span></div>
+                <div class="dp-card" data-zap="the Most read box"><b>Most read</b>Rail fares frozen<br>The best city walks</div>
+              </aside>
+            </div>
+            <div class="dp-news" data-zap="the newsletter box" data-describe="newsletter"><b>Get the morning briefing</b>The day's best stories, in your inbox at 7am.<span class="dp-btn">Sign up</span></div>
+            <div class="dp-chat" data-zap="the chat bubble" data-describe="chat" aria-label="Chat bubble"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></div>
+            <div class="dp-cookie" id="dp-cookie" role="dialog" aria-label="Cookie banner on the pretend page">
+              <p><b>We value your privacy</b> We and our 847 partners use cookies to personalise ads.</p>
+              <div><button type="button" data-cookie="accept">Accept all</button><button type="button" data-cookie="reject" id="dp-reject">Reject all</button></div>
+            </div>
+            <div class="dp-toast" id="dp-toast" aria-hidden="true"></div>
+            <div class="dp-zapbar" id="dp-zapbar" hidden>
+              <span>Click anything to remove it until you reload.</span><span class="dp-count" id="dp-zapcount"></span>
+              <button type="button" id="dp-undo" disabled>Undo</button><button type="button" id="dp-done" class="on">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-panel" role="group" aria-label="Quietfort panel (demo)">
+          <div class="dpn-card dpn-site">
+            <span class="mark"><svg viewBox="26 24 48 56" aria-hidden="true"><path d="M28 26h8v5h6v-5h16v5h6v-5h8v23c0 15-9.5 24.5-22 29.5C37.5 73.5 28 64 28 49z" fill="#fff"/><rect x="38" y="47" width="24" height="7" rx="3.5" fill="#0B3C45"/></svg></span>
+            <div><b>www.example.com</b><span id="dpn-state">Blocking is on for this site</span></div>
+            <button type="button" class="dpn-sw" id="dpn-block" role="switch" aria-checked="true" aria-label="Blocking on this site"><span></span></button>
+          </div>
+          <div class="dpn-counts">
+            <div class="dpn-card"><b id="dpn-blocked">0</b><span>blocked on this page</span></div>
+            <div class="dpn-card"><b id="dpn-popups">0</b><span>pop-ups closed</span></div>
+          </div>
+          <div class="dpn-card dpn-row">
+            <span class="tile t-ck mini-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M9 10h.01M14 9h.01M10 14.5h.01M15 14h.01"/></svg></span>
+            <span>Reject cookie banners</span>
+            <button type="button" class="dpn-sw" id="dpn-cookies" role="switch" aria-checked="true" aria-label="Reject cookie banners"><span></span></button>
+          </div>
+          <button type="button" class="dpn-zap" id="dpn-zap" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+            <span id="dpn-zap-label">Zap</span>
+          </button>
+          <form class="dpn-describe" id="dpn-describe">
+            <label for="dpn-q" class="sr-only">Describe something to hide</label>
+            <input id="dpn-q" type="text" placeholder="Describe something to hide" autocomplete="off" enterkeyhint="search">
+            <button type="submit">Find</button>
+          </form>
+          <div class="dpn-chips" aria-label="Ideas to try">
+            <button type="button" data-try="the newsletter pop-up">the newsletter pop-up</button>
+            <button type="button" data-try="chat bubble">chat bubble</button>
+          </div>
+          <p class="dpn-status" id="dpn-status" role="status" aria-live="polite">Everything here runs on this page. Nothing is sent anywhere.</p>
+        </div>
+      </div>
+      <p class="demo-note reveal">A simulation of the real extension, for trying it in seconds. The real one works on every site, and "describe it" uses your browser's own on-device model where it has one.</p>
+    </div>
+  </section>
+
   <section class="block" id="features">
     <div class="wrap">
-      <div class="head">
+      <div class="head reveal">
         <p class="eyebrow">What it does</p>
         <h2>Everything you'd expect. A few things you wouldn't.</h2>
         <p class="lede">Quietfort uses the same trusted filter lists as the best blockers, then adds tools for the bits of the web that lists can't fix.</p>
       </div>
       <div class="grid">
-        <article class="card">
+        <article class="card reveal">
           <div class="tile t-ads" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 4l16 16"/></svg></div>
           <h3>Ads, gone</h3>
           <p>Banners, pop-ups, pop-unders and video ads, including the ones that try to sneak back in after the page loads.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="tile t-trk" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M4 4l16 16"/></svg></div>
           <h3>Trackers stopped</h3>
           <p>Analytics beacons, fingerprinting scripts and tracking pixels are blocked before they load. Global Privacy Control is on by default.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="tile t-ck" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 109 9 3 3 0 01-3-3 3 3 0 01-3-3 3 3 0 01-3-3z"/><circle cx="9" cy="12" r=".8" fill="currentColor"/><circle cx="14" cy="15" r=".8" fill="currentColor"/></svg></div>
           <h3>Cookie banners, rejected</h3>
           <p>Quietfort answers consent pop-ups for you, always choosing "reject" or "necessary only", never "accept".</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="tile t-dng" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 8v5M12 16.5v.5"/></svg></div>
           <h3>Dangerous sites, flagged</h3>
           <p>Known phishing, scam and malware sites get a clear warning page first, so one wrong click doesn't cost you.</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="tile t-tool" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></div>
           <h3>Zap and hide</h3>
           <p>Click anything to remove it for this visit, or hide it on that site for good. Or just describe it: "the newsletter pop-up".</p>
         </article>
-        <article class="card">
+        <article class="card reveal">
           <div class="tile t-deep" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5a4 4 0 004.9 4.9L11 19a2.1 2.1 0 01-3-3l8.6-8.4a4 4 0 00-2.1-2.1z"/></svg></div>
           <h3>Site broken? One button.</h3>
           <p>If a page stops working, Quietfort finds the exact rule that broke it and switches only that one off, not your whole protection.</p>
@@ -320,7 +553,31 @@ footer a:hover { color: var(--fg); }
 
   <section class="block">
     <div class="wrap spot wide">
-      <div class="spot-copy">
+      <div class="spot-copy reveal">
+        <div>
+        <p class="eyebrow">Recorded in Chrome</p>
+        <h2>Turn it on. The page calms down.</h2>
+        <p class="lede">A real recording of Quietfort on a news page: blocking off, then one switch, and the ads and trackers are gone after the page reloads.</p>
+        </div>
+        <ul>
+          <li><b>Ads and trackers</b> are stopped before they load, not just hidden.</li>
+          <li><b>The count</b> shows what was stopped on this page.</li>
+          <li><b>One switch per site</b>, so you stay in charge.</li>
+        </ul>
+      </div>
+      <div class="frame clip-wrap reveal">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i><em>www.example.com</em></div>
+        <video class="clip" muted loop playsinline preload="none" poster="assets/video/block-poster.jpg" width="1600" height="1000" aria-label="Recording: the Quietfort panel switches blocking on for a news page, and the yellow ad banners disappear after the reload">
+          <source src="assets/video/block.mp4" type="video/mp4">
+        </video>
+        <button type="button" class="clip-toggle" aria-label="Play video"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap spot wide">
+      <div class="spot-copy reveal">
         <div>
         <p class="eyebrow">Zap mode</p>
         <h2>See something you don't want? Click it away.</h2>
@@ -332,19 +589,20 @@ footer a:hover { color: var(--fg); }
           <li><b>Links don't fire</b> while zapping, so you never open a page by accident.</li>
         </ul>
       </div>
-      <div>
-      <div class="frame phone-ok">
+      <div class="frame phone-ok clip-wrap reveal">
         <div class="bar" aria-hidden="true"><i></i><i></i><i></i><em>www.example.com</em></div>
-        <picture><source srcset="assets/zap-phone.jpg" media="(max-width: 700px)" width="780" height="1520"><img class="zoomable" src="assets/zap.jpg" alt="Zap mode on a news page: the newsletter box under the pointer is outlined in teal, and a bar at the bottom says Click anything to remove it until you reload, with Undo and Done buttons" width="2560" height="1600" loading="lazy"></picture>
-      </div>
-      <p class="zoom-hint">Tap or click a screenshot to see it full size.</p>
+        <video class="clip" muted loop playsinline preload="none" poster="assets/video/zap-poster.jpg" width="1600" height="1000" aria-label="Recording: Zap is turned on from the panel, the newsletter box and the photo are clicked away, and Undo brings the photo back">
+          <source src="assets/video/zap-phone.mp4" type="video/mp4" media="(max-width: 700px)">
+          <source src="assets/video/zap.mp4" type="video/mp4">
+        </video>
+        <button type="button" class="clip-toggle" aria-label="Play video"></button>
       </div>
     </div>
   </section>
 
   <section class="block">
     <div class="wrap spot wide">
-      <div class="spot-copy">
+      <div class="spot-copy reveal">
         <div>
         <p class="eyebrow">Calm by design</p>
         <h2>Out of your way, until you need it.</h2>
@@ -356,11 +614,12 @@ footer a:hover { color: var(--fg); }
           <li><b>Backup and restore</b> your settings in one file.</li>
         </ul>
       </div>
-      <div class="themes">
-        <figure><img class="shot zoomable" src="assets/popup-light.png" alt="The panel in the Light theme" width="360" height="447" ><figcaption>Light</figcaption></figure>
-        <figure><img class="shot zoomable" src="assets/popup-fortNight.png" alt="The panel in the Fort Night theme" width="360" height="447" ><figcaption>Fort Night</figcaption></figure>
-        <figure><img class="shot zoomable" src="assets/popup-graphite.png" alt="The panel in the Graphite theme" width="360" height="447" ><figcaption>Graphite</figcaption></figure>
+      <div class="themes reveal">
+        <figure><img class="shot zoomable" src="assets/popup-light.png" alt="The panel in the Light theme" width="340" height="464" ><figcaption>Light</figcaption></figure>
+        <figure><img class="shot zoomable" src="assets/popup-fortNight.png" alt="The panel in the Fort Night theme" width="340" height="464" ><figcaption>Fort Night</figcaption></figure>
+        <figure><img class="shot zoomable" src="assets/popup-graphite.png" alt="The panel in the Graphite theme" width="340" height="464" ><figcaption>Graphite</figcaption></figure>
       </div>
+      <p class="zoom-hint">Tap or click a panel to see it full size.</p>
     </div>
   </section>
 
@@ -382,7 +641,7 @@ footer a:hover { color: var(--fg); }
 
   <section class="block" id="download">
     <div class="wrap">
-      <div class="head">
+      <div class="head reveal">
         <p class="eyebrow">Download</p>
         <h2>Get Quietfort for your browser.</h2>
         <p class="lede">Store listings are on the way. Until then you can install the latest release directly; it takes about a minute.</p>
@@ -438,7 +697,7 @@ footer a:hover { color: var(--fg); }
 
   <section class="block" id="faq">
     <div class="wrap">
-      <div class="head"><p class="eyebrow">Questions</p><h2>Good to know</h2></div>
+      <div class="head reveal"><p class="eyebrow">Questions</p><h2>Good to know</h2></div>
       <div class="faq">
         <div>
           <details><summary>Is Quietfort really free?</summary><p>Yes. No trial, no subscription, and no ads let through for money. The code is open source under the MPL-2.0.</p></details>
@@ -469,6 +728,157 @@ footer a:hover { color: var(--fg); }
     </nav>
   </div>
 </footer>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  document.documentElement.classList.add('js');
+
+  // Reveal sections as they scroll in.
+  const reveals = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !reduce.matches) {
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    reveals.forEach((el) => io.observe(el));
+  } else reveals.forEach((el) => el.classList.add('in'));
+
+  // Product clips: play while on screen; with reduced motion, wait for the visitor.
+  const PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>';
+  const PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"/><rect x="14" y="4.5" width="4" height="15" rx="1"/></svg>';
+  document.querySelectorAll('.clip-wrap').forEach((wrap) => {
+    const v = wrap.querySelector('video'); const b = wrap.querySelector('.clip-toggle');
+    let wanted = !reduce.matches; let visible = false;
+    const sync = () => { const on = wanted && visible; if (on) v.play().catch(() => {}); else v.pause(); b.innerHTML = wanted ? PAUSE : PLAY; b.setAttribute('aria-label', wanted ? 'Pause video' : 'Play video'); };
+    b.addEventListener('click', () => { wanted = !wanted; if (wanted) visible = true; sync(); });
+    if ('IntersectionObserver' in window) new IntersectionObserver((es) => { visible = es[0].isIntersecting; sync(); }, { threshold: 0.35 }).observe(v);
+    else { visible = true; sync(); }
+  });
+
+  // ---- Try-it demo: a simulation of the panel acting on a pretend page.
+  const demo = document.getElementById('demo'); if (!demo) return;
+  const $ = (id) => document.getElementById(id);
+  const page = $('demo-page'), badge = $('demo-badge'), status = $('dpn-status');
+  const blockSw = $('dpn-block'), cookieSw = $('dpn-cookies'), zapBtn = $('dpn-zap');
+  const cookie = $('dp-cookie'), toast = $('dp-toast'), zapbar = $('dp-zapbar'), undoBtn = $('dp-undo');
+  const TRACKERS = 4; // pretend scripts and pixels the lists stop on this page
+  let blocking = true, cookies = true, zapping = false, popups = 0, shown = 0;
+  let zapped = []; const hiddenForGood = new Set(); let timers = [];
+  const later = (ms, fn) => { const t = setTimeout(fn, reduce.matches ? Math.min(ms, 60) : ms); timers.push(t); return t; };
+  const say = (t) => { status.textContent = t; };
+  const flash = (t) => { toast.textContent = t; toast.classList.add('show'); later(1900, () => toast.classList.remove('show')); };
+  const ads = () => [...page.querySelectorAll('[data-ad]')];
+  const countFor = () => (blocking ? TRACKERS + ads().length : 0);
+
+  function animateCount(to) {
+    const el = $('dpn-blocked'); const from = shown; shown = to;
+    if (reduce.matches || from === to) { el.textContent = to; badge.textContent = to; return; }
+    const t0 = performance.now(), d = 600;
+    const step = (t) => { const k = Math.min(1, (t - t0) / d); const n = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))); el.textContent = n; badge.textContent = n; if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step); badge.classList.add('bump'); later(260, () => badge.classList.remove('bump'));
+  }
+  const setSwitch = (el, on) => el.setAttribute('aria-checked', String(on));
+  // On narrow screens the panel sits below the page: bring the page back into view after an action.
+  const browserEl = demo.querySelector('.demo-browser');
+  const showPage = () => { if (!matchMedia('(max-width: 960px)').matches) return; const r = browserEl.getBoundingClientRect(); if (r.top < 64 || r.top > innerHeight * 0.4) browserEl.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'start' }); };
+
+  function load() {
+    timers.forEach(clearTimeout); timers = []; toast.classList.remove('show');
+    setZap(false);
+    zapped.forEach((el) => el.classList.remove('gone', 'fading')); zapped = []; updateZapBar();
+    page.querySelectorAll('[data-zap]').forEach((el) => { el.classList.remove('found'); el.classList.toggle('gone', hiddenForGood.has(el)); });
+    demo.dataset.blocking = blocking ? 'on' : 'off';
+    $('dpn-state').textContent = blocking ? 'Blocking is on for this site' : 'Blocking is off for this site';
+    shown = 0; $('dpn-blocked').textContent = '0'; badge.textContent = '0';
+    popups = 0; $('dpn-popups').textContent = '0';
+    cookie.classList.remove('up'); cookie.hidden = false; $('dp-reject').classList.remove('press');
+    later(120, () => animateCount(countFor()));
+    later(500, () => cookie.classList.add('up'));
+    if (blocking && cookies) {
+      later(1300, () => $('dp-reject').classList.add('press'));
+      later(1700, () => { closeCookie(); popups = 1; $('dpn-popups').textContent = '1'; flash('Cookie banner rejected'); });
+    }
+  }
+  function closeCookie() { cookie.classList.remove('up'); later(500, () => { cookie.hidden = true; }); }
+  cookie.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; closeCookie(); say(b.dataset.cookie === 'accept' ? 'You accepted. With Quietfort on, it would have said no for you.' : 'You rejected it by hand. Quietfort does that for you.'); });
+
+  blockSw.addEventListener('click', () => {
+    blocking = !blocking; setSwitch(blockSw, blocking);
+    say(blocking ? 'Blocking on. The page reloaded without the ads and trackers.' : 'Blocking off. The page reloaded with everything the site loads.');
+    load(); showPage();
+  });
+  cookieSw.addEventListener('click', () => {
+    cookies = !cookies; setSwitch(cookieSw, cookies);
+    say(cookies ? 'Cookie banners will be rejected for you. Reload to see it.' : 'Cookie banners will be left for you to answer.');
+  });
+  $('demo-reload').addEventListener('click', () => { say('Reloaded. Zapped things came back; things you described stay hidden.'); load(); });
+
+  // Zap
+  const zappable = () => [...page.querySelectorAll('[data-zap]')].filter((el) => !el.classList.contains('gone') && el.offsetParent !== null && getComputedStyle(el).maxHeight !== '0px');
+  function setZap(on) {
+    zapping = on; demo.dataset.zap = on ? 'on' : 'off'; zapBtn.setAttribute('aria-pressed', String(on));
+    $('dpn-zap-label').textContent = on ? 'Zapping… (Esc to stop)' : 'Zap';
+    zapbar.hidden = !on;
+    page.querySelectorAll('[data-zap]').forEach((el) => {
+      if (on) { el.tabIndex = 0; el.setAttribute('role', 'button'); el.setAttribute('aria-label', 'Remove ' + el.dataset.zap); }
+      else { el.removeAttribute('tabindex'); if (el.getAttribute('role') === 'button') el.removeAttribute('role'); el.removeAttribute('aria-label'); el.classList.remove('target'); }
+    });
+    const chat = page.querySelector('.dp-chat'); if (!on) chat.setAttribute('aria-label', 'Chat bubble');
+    const img = page.querySelector('.dp-img'); if (!on) { img.setAttribute('role', 'img'); img.setAttribute('aria-label', 'Photo'); }
+    if (on) { say('Zap is on: click or tap anything on the page. Undo brings it back.'); const first = zappable()[0]; if (first && document.activeElement === zapBtn && matchMedia('(hover: none)').matches === false) first.focus({ preventScroll: true }); }
+  }
+  function zapEl(el) {
+    el.classList.add('fading'); el.classList.remove('target');
+    later(220, () => { el.classList.add('gone'); el.classList.remove('fading'); zapped.push(el); updateZapBar(); say('Removed ' + el.dataset.zap + '. It comes back when you reload.'); const n = zappable()[0]; if (n && page.contains(document.activeElement)) n.focus({ preventScroll: true }); });
+  }
+  function updateZapBar() { $('dp-zapcount').textContent = zapped.length ? zapped.length + ' removed' : ''; undoBtn.disabled = !zapped.length; }
+  zapBtn.addEventListener('click', () => { setZap(!zapping); if (zapping) showPage(); });
+  $('dp-done').addEventListener('click', () => { setZap(false); zapBtn.focus(); say(zapped.length ? 'Done. ' + zapped.length + ' removed until you reload.' : 'Zap is off.'); });
+  undoBtn.addEventListener('click', () => { const el = zapped.pop(); if (el) { el.classList.remove('gone'); updateZapBar(); say('Brought back ' + el.dataset.zap + '.'); } });
+  page.addEventListener('click', (e) => {
+    if (!zapping) return; if (e.target.closest('.dp-zapbar')) return;
+    const el = e.target.closest('[data-zap]'); if (!el || el.classList.contains('gone')) return;
+    e.preventDefault(); e.stopPropagation(); zapEl(el);
+  }, true);
+  page.addEventListener('keydown', (e) => {
+    if (!zapping) return;
+    const el = e.target.closest && e.target.closest('[data-zap]');
+    if (el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); zapEl(el); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (!zapping) return;
+    if (e.key === 'Escape') { setZap(false); zapBtn.focus(); say('Zap is off.'); }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && demo.contains(document.activeElement)) { e.preventDefault(); undoBtn.click(); }
+  });
+
+  // Describe it to hide it (the real extension asks the browser's on-device model; this demo matches words).
+  const WORDS = [
+    [/news ?letter|briefing|subscribe|sign ?up|e-?mail|inbox/, '.dp-news'],
+    [/chat|bubble|help|support|messag/, '.dp-chat'],
+    [/\bads?\b|advert|banner ad|sale|sponsor|promo|trick/, '[data-ad]'],
+    [/photo|image|picture/, '.dp-img'],
+    [/most read|popular|sidebar|side ?bar/, '.dp-card'],
+    [/cookie|consent|privacy banner/, '#dp-cookie'],
+  ];
+  function describe(q) {
+    const text = q.trim().toLowerCase(); if (!text) { say('Type what you want gone, for example "the newsletter pop-up".'); return; }
+    const hit = WORDS.find(([re]) => re.test(text));
+    if (!hit) { say('Couldn’t find "' + q.trim() + '" on this page. Try "newsletter" or "chat bubble".'); return; }
+    if (hit[1] === '#dp-cookie') { if (!cookie.hidden && cookie.classList.contains('up')) closeCookie(); say('Cookie banners are handled by "Reject cookie banners", no need to hide them.'); return; }
+    const els = [...page.querySelectorAll(hit[1])].filter((el) => !el.classList.contains('gone') && getComputedStyle(el).maxHeight !== '0px');
+    if (!els.length) { say(hit[1] === '[data-ad]' && blocking ? 'The ads are already blocked. Switch blocking off to see them.' : 'That’s already hidden.'); return; }
+    els.forEach((el) => el.classList.add('found')); showPage();
+    say('Found ' + els[0].dataset.zap + '. Hiding it…');
+    later(900, () => els.forEach((el) => { el.classList.remove('found'); el.classList.add('fading'); later(220, () => { el.classList.remove('fading'); el.classList.add('gone'); hiddenForGood.add(el); }); }));
+    later(1150, () => say('Hidden ' + els[0].dataset.zap + '. It stays hidden on this site, even after a reload.'));
+  }
+  $('dpn-describe').addEventListener('submit', (e) => { e.preventDefault(); describe($('dpn-q').value); });
+  document.querySelectorAll('[data-try]').forEach((b) => b.addEventListener('click', () => { $('dpn-q').value = b.dataset.try; describe(b.dataset.try); }));
+
+  // Start the pretend page when the demo first comes into view.
+  let started = false; const start = () => { if (!started) { started = true; load(); } };
+  if ('IntersectionObserver' in window) new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { start(); o.disconnect(); } }, { threshold: 0.3 }).observe(demo);
+  else start();
+  demo.addEventListener('pointerdown', start, { once: true }); demo.addEventListener('focusin', start, { once: true });
+})();
+</script>
 <dialog class="lightbox" id="lightbox" aria-label="Screenshot, full size"><img alt=""></dialog>
 <script>
 (() => {

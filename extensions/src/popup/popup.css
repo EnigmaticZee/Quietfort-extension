@@ -130,5 +130,5 @@ footer { color: var(--muted); font-size: 11px; display: flex; flex-direction: co
 .links { display: flex; justify-content: space-between; padding: 0 2px; }
 .pause { display: flex; flex-direction: column; gap: 8px; }
 .buttons.three { grid-template-columns: 1fr 1fr 1fr; }
-.buttons.three button { padding: 7px 4px; font-size: 12px; }
+.buttons.three button { padding: 8px 4px; font-size: 12px; flex-direction: column; gap: 4px; text-align: center; line-height: 1.25; }
 #paused-until { display: block; margin-top: 2px; }
