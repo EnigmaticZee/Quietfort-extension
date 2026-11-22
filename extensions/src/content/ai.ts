@@ -15,7 +15,7 @@
 // Nothing is sent over the network.
 
 import {
-  ASK_THRESHOLD, attributeDiscloses, blockTooLarge, cacheSelector, decideBlock, disclosureStrength, growsTooMuch, isAdNetworkUrl, isAffiliateUrl, isDisplayCaption, mixedFeedContainer, ownSectionWithLabelOnly,
+  ASK_THRESHOLD, attributeDiscloses, blockTooLarge, cacheSelector, decideBlock, disclosureStrength, growsTooMuch, isAdNetworkUrl, isAffiliateUrl, isDisplayCaption, mixedFeedContainer, ownSectionWithLabelOnly, proseWithInlineLinks,
   isProtectedElement, looksLikeNavigation, scoreBlock, sponsoredPrompt, tokenHint,
 } from '../shared/sponsored.ts';
 import type { BlockFeatures } from '../shared/sponsored.ts';
@@ -122,9 +122,11 @@ function containsProtected(el: Element): boolean {
  *  - menus, headers and footers: only an ad-network frame hides them, the model is not asked (a single
  *    rel="sponsored" partner link in a menu, as on USA Today, does not make the menu an ad);
  *  - a block pairing one of the site's own headlines with outside links (Taboola feed cards);
- *  - a section of the site's own links whose only evidence is a label (ask band).
+ *  - a section of the site's own links whose only evidence is a label (ask band);
+ *  - article text whose only evidence is inline affiliate links (see proseWithInlineLinks).
  */
 function mustKeep(el: Element, a: Analysed, decision: 'hide' | 'ask'): boolean {
+  if (proseWithInlineLinks(a.features, el.tagName, a.textLen, a.linkTextLen)) return true;
   if (!a.features.adFrames && (a.navigation || inChrome(el))) return true;
   if (!a.features.adFrames && a.mixedFeed) return true;
   return decision === 'ask' && ownSectionWithLabelOnly(a.features, a.ownLinks, location.hostname);
@@ -234,6 +236,9 @@ interface Analysed {
   frameHost?: string;
   affiliateHost?: string;
   linkHosts: string[];
+  /** Length of the block's text, and of the text inside its links. */
+  textLen: number;
+  linkTextLen: number;
 }
 
 function analyse(block: Element): Analysed {
@@ -279,6 +284,8 @@ function analyse(block: Element): Analysed {
     frameHost: frames[0] ? host(frames[0].src) : undefined,
     affiliateHost: aff[0] ? host(aff[0].href) : undefined,
     linkHosts: [...new Set(links.map((a) => host(a.href)).filter(Boolean))],
+    textLen: (block.textContent ?? '').replace(/\s+/g, ' ').trim().length,
+    linkTextLen: links.reduce((n, a) => n + (a.textContent ?? '').replace(/\s+/g, ' ').trim().length, 0),
   };
 }
 

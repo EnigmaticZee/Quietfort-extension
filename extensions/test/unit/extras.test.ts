@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bestByWords, describeWords, readDescribeAnswer, shortlist, describePrompt } from '../../src/shared/describe.ts';
+import { bestByWords, combinePicks, describeWords, placeOf, readDescribeAnswer, shortlist, describePrompt } from '../../src/shared/describe.ts';
 import type { BlockSummary } from '../../src/shared/describe.ts';
 import { readBackup, checkRules, BACKUP_FORMAT } from '../../src/shared/backup.ts';
 import { allowlistRule } from '../../src/shared/dnr.ts';
@@ -49,6 +49,34 @@ test('describe: model shortlist, prompt and answer', () => {
   assert.equal(readDescribeAnswer({ index: -1 }, order), -1);
   assert.equal(readDescribeAnswer({ index: 9 }, order), -1);
   assert.equal(readDescribeAnswer(null, order), -1);
+});
+
+test('describe: "email" finds the newsletter box', () => {
+  assert.ok(describeWords('the box that wants my email').some((w) => w.word === 'email' && w.alts.includes('inbox')));
+  assert.equal(bestByWords(page, 'email sign up', vp), 3);
+});
+
+test('describe: positions on the first screen are given to the model', () => {
+  assert.equal(placeOf(blk({ x: 1100, y: 680, w: 60, h: 60, fixed: true }), vp), 'bottom-right');
+  assert.equal(placeOf(blk({ x: 0, y: 0, w: 1280, h: 80 }), vp), 'top');
+  assert.equal(placeOf(blk({ x: 0, y: 3000, w: 300, h: 200 }), vp), '');
+  const withPlace = [...page];
+  withPlace[4] = { ...page[4]!, x: 1200, y: 720 };
+  assert.match(describePrompt('chat', withPlace, [4], vp), /60x60 floating bottom-right \|/);
+  assert.doesNotMatch(describePrompt('chat', withPlace, [4]), /bottom-right/);
+});
+
+test('describe: the model wins unless it ignores clear words', () => {
+  // Model unavailable or slow: words.
+  assert.deepEqual(combinePicks(page, 'newsletter popup', vp, null), { index: 3, via: 'words' });
+  // Model agrees, or picks something the words also touch: model.
+  assert.deepEqual(combinePicks(page, 'newsletter popup', vp, 3), { index: 3, via: 'model' });
+  // Words find nothing (a description in other words): the model's pick stands.
+  assert.deepEqual(combinePicks(page, 'the round thing at the bottom', vp, 4), { index: 4, via: 'model' });
+  // The words point clearly at the newsletter, the model picked the unrelated sidebar: words.
+  assert.deepEqual(combinePicks(page, 'newsletter popup', vp, 5), { index: 3, via: 'words' });
+  // Model says nothing matches, words have nothing: not found.
+  assert.deepEqual(combinePicks(page, 'weather widget', vp, -1), { index: -1, via: 'words' });
 });
 
 test('pause everywhere: one allow-all rule; normal list unchanged', () => {

@@ -17,8 +17,12 @@ declare const __E2E__: boolean;
 (() => {
   // `__adbPickerOpenShadow` can only be set from the extension's isolated world
   // (diagnostics / tests); pages cannot see or set it.
-  const w = window as unknown as { __adbPicker?: boolean; __adbPickerOpenShadow?: boolean };
-  if (w.__adbPicker) return;
+  const w = window as unknown as { __adbPicker?: boolean; __adbPickerOpenShadow?: boolean; __adbPickerTake?: () => void };
+  // Already open: move it to the newly chosen element (a second "Describe it", or the right-click menu).
+  if (w.__adbPicker) {
+    w.__adbPickerTake?.();
+    return;
+  }
   w.__adbPicker = true;
   const api: typeof chrome = ((globalThis as unknown as { browser?: typeof chrome }).browser ?? chrome);
 
@@ -67,7 +71,22 @@ declare const __E2E__: boolean;
 
   const inPicker = (ev: Event) => ev.composedPath().includes(host);
 
+  // What each kind of outline is drawn around, so outlines can follow the page when it scrolls.
+  const drawn = new Map<string, Element[]>();
+  let redrawQueued = false;
+  function redraw(): void {
+    if (redrawQueued) return;
+    redrawQueued = true;
+    requestAnimationFrame(() => {
+      redrawQueued = false;
+      for (const [cls, els] of drawn) boxes(els, cls);
+    });
+  }
+  window.addEventListener('scroll', redraw, { capture: true, passive: true });
+  window.addEventListener('resize', redraw, { passive: true });
+
   function boxes(els: Element[], cls: string): void {
+    drawn.set(cls, els);
     layer.querySelectorAll(`.${cls}`).forEach((b) => b.remove());
     for (const el of els.slice(0, 60)) {
       const r = el.getBoundingClientRect();
@@ -157,8 +176,11 @@ declare const __E2E__: boolean;
     window.removeEventListener('mousemove', onMove, true);
     window.removeEventListener('click', onClick, true);
     window.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('scroll', redraw, true);
+    window.removeEventListener('resize', redraw);
     host.remove();
     w.__adbPicker = false;
+    w.__adbPickerTake = undefined;
   }
 
   function onMove(ev: MouseEvent): void {
@@ -205,17 +227,21 @@ declare const __E2E__: boolean;
     if (c) select(c);
   });
   // Opened from the right-click menu or from "Describe it to hide it": start on that element.
-  {
+  function take(): void {
     const m = window as unknown as { __qfPickElement?: Element | null };
     const pre = m.__qfPickElement;
     m.__qfPickElement = null;
     if (pre instanceof Element && pre.isConnected && pre !== document.documentElement && pre !== document.body) {
       queueMicrotask(() => {
-        select(pre);
+        unpreview();
+        trail.length = 0;
         pre.scrollIntoView({ block: 'nearest' });
+        select(pre);
       });
     }
   }
+  w.__adbPickerTake = take;
+  take();
 
   $('adb-save').addEventListener('click', async () => {
     const chosen = cands[choice];

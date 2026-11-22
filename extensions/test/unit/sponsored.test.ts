@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  attributeDiscloses, blockTooLarge, cacheSelector, decideBlock, disclosureStrength, isAdNetworkUrl, isAffiliateUrl, isProtectedElement, scoreBlock,
+  attributeDiscloses, blockTooLarge, cacheSelector, decideBlock, disclosureStrength, isAdNetworkUrl, isAffiliateUrl, isProtectedElement, proseWithInlineLinks, scoreBlock,
 } from '../../src/shared/sponsored.ts';
 import type { BlockFeatures } from '../../src/shared/sponsored.ts';
 
@@ -126,4 +126,25 @@ test('display-ad captions vs native labels; mixed feed containers', async () => 
   assert.equal(mixedFeedContainer(mixed.slice(1), page), true, 'one own headline + one paid item (Independent feed card)');
   assert.equal(mixedFeedContainer([mixed[2]!], page), false, 'only the paid item');
   assert.equal(mixedFeedContainer(mixed.slice(0, 2), page), false, 'no outside link: the site\'s own list');
+});
+
+test('sponsored: article text with inline affiliate links is kept', () => {
+  const aff = { labels: [], attrDisclosures: 0, relSponsored: 0, affiliateLinks: 1, adFrames: 0, tokenHints: 0 };
+  // Real site (Tom's Guide): a news paragraph whose outbound links all go through go.redirectingat.com.
+  assert.equal(proseWithInlineLinks(aff, 'P', 300, 60), true);
+  // Long text where the links are a small part.
+  assert.equal(proseWithInlineLinks({ ...aff, affiliateLinks: 2 }, 'DIV', 400, 80), true);
+  // A short deal card ("Apple Watch Series 12: $329 (Save $70)") is still judged.
+  assert.equal(proseWithInlineLinks(aff, 'DIV', 40, 40), false);
+  // A list of linked deal headlines (most of the text is link text) is still judged.
+  assert.equal(proseWithInlineLinks({ ...aff, affiliateLinks: 3 }, 'DIV', 400, 300), false);
+  // Any other sign of sponsorship: not this rule.
+  assert.equal(proseWithInlineLinks({ ...aff, labels: [{ text: 'Sponsored', strength: 'strong' }] }, 'P', 300, 60), false);
+  // The same link marked rel="sponsored" (Tom's Guide does both): still article text.
+  assert.equal(proseWithInlineLinks({ ...aff, relSponsored: 1 }, 'P', 300, 60), true);
+  assert.equal(proseWithInlineLinks({ ...aff, affiliateLinks: 0, relSponsored: 1 }, 'P', 300, 60), true);
+  // A rel="sponsored" deal card is still judged.
+  assert.equal(proseWithInlineLinks({ ...aff, relSponsored: 1 }, 'DIV', 50, 45), false);
+  assert.equal(proseWithInlineLinks({ ...aff, affiliateLinks: 0 }, 'P', 300, 60), false);
+  assert.equal(proseWithInlineLinks({ ...aff, adFrames: 1 }, 'P', 300, 60), false);
 });

@@ -33,9 +33,10 @@ const SYNONYMS: Record<string, string[]> = {
   popup: ['popup', 'pop-up', 'modal', 'dialog', 'overlay', 'lightbox', 'interstitial'],
   modal: ['modal', 'dialog', 'overlay', 'popup'],
   overlay: ['overlay', 'modal', 'backdrop'],
-  newsletter: ['newsletter', 'subscribe', 'signup', 'sign-up', 'email', 'mailing', 'inbox'],
+  newsletter: ['newsletter', 'subscribe', 'signup', 'sign-up', 'sign up', 'email', 'mailing', 'inbox', 'briefing', 'digest'],
+  email: ['email', 'e-mail', 'inbox', 'newsletter', 'mailing', 'signup', 'sign up', 'subscribe'],
   subscribe: ['subscribe', 'subscription', 'newsletter', 'signup'],
-  signup: ['signup', 'sign-up', 'register', 'subscribe'],
+  signup: ['signup', 'sign-up', 'sign up', 'register', 'subscribe'],
   bubble: ['bubble', 'launcher', 'badge', 'fab'],
   chat: ['chat', 'messenger', 'intercom', 'drift', 'zendesk', 'livechat', 'crisp', 'tawk', 'hubspot-messages', 'support'],
   video: ['video', 'player', 'jwplayer', 'vjs', 'brightcove', 'autoplay'],
@@ -64,7 +65,8 @@ const SYNONYMS: Record<string, string[]> = {
   survey: ['survey', 'feedback', 'poll', 'questionnaire'],
   paywall: ['paywall', 'subscribe', 'premium', 'meter'],
   donate: ['donate', 'donation', 'support us', 'contribute'],
-  weather: ['weather', 'forecast'],
+  weather: ['weather', 'forecast', 'temperature'],
+  forecast: ['forecast', 'weather'],
   stock: ['stock', 'ticker', 'market'],
   ticker: ['ticker', 'marquee'],
 };
@@ -160,13 +162,35 @@ export function describeSchema(n: number) {
   } as const;
 }
 
-export function describePrompt(description: string, blocks: BlockSummary[], order: number[]): string {
+/** Where a block sits on the first screen ("bottom-right"), or '' when it is further down the page. */
+export function placeOf(b: BlockSummary, viewport: { w: number; h: number }): string {
+  if (b.y > viewport.h && !b.fixed) return '';
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  const v = cy < viewport.h / 3 ? 'top' : cy > (viewport.h * 2) / 3 ? 'bottom' : 'middle';
+  const h = cx < viewport.w / 3 ? 'left' : cx > (viewport.w * 2) / 3 ? 'right' : 'centre';
+  return b.w > viewport.w * 0.6 ? v : `${v}-${h}`;
+}
+
+export function describePrompt(description: string, blocks: BlockSummary[], order: number[], viewport?: { w: number; h: number }): string {
   const lines = order.map((i, n) => {
     const b = blocks[i]!;
     const names = [b.id && `#${b.id}`, ...b.classes.slice(0, 4).map((c) => `.${c}`), ...b.attrs.slice(0, 3)].filter(Boolean).join(' ');
-    return `${n}. <${b.tag}> ${names.slice(0, 120)} | ${b.w}x${b.h}${b.fixed ? ' floating' : ''} | ${b.text.slice(0, 90)}`;
+    const place = viewport ? placeOf(b, viewport) : '';
+    return `${n}. <${b.tag}> ${names.slice(0, 120)} | ${b.w}x${b.h}${b.fixed ? ' floating' : ''}${place ? ` ${place}` : ''} | ${b.text.slice(0, 90)}`;
   });
   return `Hide: ${description.slice(0, 200)}\nBlocks:\n${lines.join('\n')}`;
+}
+
+/**
+ * Final pick from the model's answer and word matching. The model wins, except when the words point
+ * clearly at one block and the model chose a block that shares none of the person's words.
+ */
+export function combinePicks(blocks: BlockSummary[], description: string, viewport: { w: number; h: number }, modelPick: number | null): { index: number; via: 'model' | 'words' } {
+  const byWords = bestByWords(blocks, description, viewport);
+  if (modelPick === null || modelPick < 0) return { index: byWords, via: 'words' };
+  if (byWords >= 0 && byWords !== modelPick && scoreBlock(blocks[modelPick]!, describeWords(description), viewport) === 0) return { index: byWords, via: 'words' };
+  return { index: modelPick, via: 'model' };
 }
 
 /** Model answer → index into `blocks`, or -1. */

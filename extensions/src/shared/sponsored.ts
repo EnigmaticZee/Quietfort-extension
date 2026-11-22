@@ -168,6 +168,19 @@ export function scoreBlock(f: BlockFeatures): BlockScore {
   return { score, reasons };
 }
 
+/**
+ * Article text with inline affiliate links: the only evidence is affiliate and/or rel="sponsored" links,
+ * and the block reads as prose (a paragraph, or long text in which the links are a small part). Some
+ * publishers send every outbound link through an affiliate service and mark it rel="sponsored", as Google
+ * asks (real site: Tom's Guide, go.redirectingat.com, in a news paragraph), so such a block is the article
+ * itself, not an ad. Never hidden, the model is not asked.
+ */
+export function proseWithInlineLinks(f: BlockFeatures, tag: string, textLen: number, linkTextLen: number): boolean {
+  if (!(f.affiliateLinks || f.relSponsored) || f.labels.length || f.attrDisclosures || f.adFrames || f.tokenHints) return false;
+  if (tag.toLowerCase() === 'p' || tag.toLowerCase() === 'blockquote') return true;
+  return textLen >= 160 && linkTextLen / textLen < 0.35;
+}
+
 /** Score at or above which a block is hidden without asking the model. */
 export const HIDE_THRESHOLD = 5;
 /** Lowest score worth asking the model about. */

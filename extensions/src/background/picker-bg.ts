@@ -16,7 +16,10 @@ import { hostMatches, hostOf } from '../shared/domain.ts';
 import { parseLine } from '../shared/parse.ts';
 import { MAX_MATCHES, selectorStringProblem } from '../shared/selectors.ts';
 import type { Fingerprint, PickerRule } from '../shared/selectors.ts';
-import { bestByWords, shortlist } from '../shared/describe.ts';
+import { combinePicks, shortlist } from '../shared/describe.ts';
+
+/** How long "Describe it" waits for the on-device model before answering with word matching. */
+const DESCRIBE_MODEL_MS = 8000;
 import type { BlockSummary } from '../shared/describe.ts';
 import { describeWithModel } from './ai.ts';
 
@@ -158,13 +161,13 @@ export async function describeHide(tabId: number, description: string): Promise<
   }
   if (!page || !page.blocks.length) return { ok: true, found: false };
   const viewport = { w: page.vw, h: page.vh };
-  let idx = -1;
-  let via: DescribeResult['via'] = 'words';
-  const fromModel = await describeWithModel(text, page.blocks, shortlist(page.blocks, text, viewport));
-  if (fromModel !== null && fromModel >= 0) {
-    idx = fromModel;
-    via = 'model';
-  } else idx = bestByWords(page.blocks, text, viewport);
+  // The model gets a few seconds. The first use after the browser starts can take ~30 s while
+  // the model loads; then word matching answers now, and the model is warm for the next time.
+  const fromModel = await Promise.race([
+    describeWithModel(text, page.blocks, shortlist(page.blocks, text, viewport), viewport),
+    new Promise<null>((r) => setTimeout(() => r(null), DESCRIBE_MODEL_MS)),
+  ]);
+  const { index: idx, via } = combinePicks(page.blocks, text, viewport, fromModel);
   if (idx < 0) return { ok: true, found: false, via };
   await B.scripting.executeScript({
     target: { tabId, frameIds: [0] },

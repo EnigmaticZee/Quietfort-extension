@@ -293,6 +293,34 @@ footer a:hover { color: var(--fg); }
 .dp-btn { display: block; width: fit-content; margin-top: 8px; background: #a33; color: #fff; padding: 5px 11px; border-radius: 6px; font-weight: 600; }
 .dp-chat { position: absolute; left: 16px; bottom: 16px; width: 44px; height: 44px; border-radius: 50%; background: #3b6fd8; color: #fff; display: grid; place-items: center; box-shadow: 0 8px 20px rgba(0,0,0,.2); }
 .dp-chat svg { width: 20px; height: 20px; }
+.dp-spons { margin-bottom: 12px; border: 1px solid var(--pg-line); border-radius: 8px; padding: 9px 12px; font: 13px/1.4 system-ui, sans-serif; overflow: hidden; max-height: 90px;
+  transition: max-height .45s ease, opacity .35s ease, margin .45s ease, padding .45s ease, border-width .45s ease; }
+.dp-spons small { display: block; font-size: 11px; color: var(--pg-muted); }
+.dp-spons b { color: var(--pg-fg); }
+.demo[data-sponsored="on"] .dp-spons { max-height: 0; opacity: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
+.dp-pick { position: absolute; right: 12px; bottom: 12px; z-index: 6; width: min(300px, calc(100% - 24px)); background: var(--card); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 12px; padding: 11px 12px; font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.dp-pick.top { bottom: auto; top: 12px; }
+.dp-pick div { display: flex; justify-content: flex-end; gap: 8px; margin-top: 9px; }
+.dp-pick button, .dp-warn button, .dp-scam-back { font: 600 12.5px system-ui, sans-serif; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: inherit; cursor: pointer; }
+.dp-pick button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.dp-scam { position: absolute; inset: 0; z-index: 7; background: #0b2a7a; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 70px 18px 18px; text-align: center; font: 14px/1.45 system-ui, sans-serif; }
+.dp-scam-alert { background: #fff; color: #111; border: 3px solid #d10000; border-radius: 6px; padding: 14px 16px; max-width: 380px; }
+.dp-scam-alert b { display: block; color: #d10000; font-size: 17px; letter-spacing: .02em; }
+.dp-scam-alert p { margin-top: 6px; }
+.dp-scam-alert .big { font-weight: 800; font-size: 17px; }
+.dp-scam-back { color: #fff; border-color: rgba(255,255,255,.5); }
+.dp-warn { position: absolute; left: 0; right: 0; top: 0; z-index: 8; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 14px; background: #b3261e; color: #fff;
+  font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.35); transform: translateY(-100%); transition: transform .3s ease; }
+.dp-warn.up { transform: none; }
+.dp-warn > div { flex: 1 1 260px; min-width: 0; }
+.dp-warn strong { display: block; font-size: 14px; }
+.dp-warn button { border-color: #fff; }
+.dp-warn button.leave { background: #fff; color: #b3261e; }
+.dpn-ai { display: flex; flex-direction: column; gap: 10px; }
+.dpn-ai-head { font-weight: 650; font-size: 13.5px; }
+.dpn-ai-head span { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 4px; }
+.dpn-visit { font: 600 12.5px system-ui, sans-serif; padding: 7px 10px; border-radius: 999px; border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--line)); background: transparent; color: var(--accent-ink); cursor: pointer; align-self: flex-start; }
 .dp-cookie { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px;
   background: #1f2a2e; color: #e9eeee; font: 13px/1.4 system-ui, sans-serif; box-shadow: 0 12px 30px rgba(0,0,0,.3);
   transform: translateY(140%); transition: transform .45s cubic-bezier(.2,.8,.2,1); }
@@ -449,7 +477,7 @@ footer a:hover { color: var(--fg); }
         <div class="demo-browser frame">
           <div class="bar demo-bar">
             <i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>
-            <em>www.example.com</em>
+            <em id="demo-url">www.example.com</em>
             <button type="button" class="demo-reload" id="demo-reload" aria-label="Reload the pretend page" title="Reload">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>
             </button>
@@ -460,6 +488,7 @@ footer a:hover { color: var(--fg); }
             <div class="dp-ad dp-lead" data-ad data-zap="the banner ad"><small>AD</small>Flash sale: everything 70% off<span>Shop now</span></div>
             <div class="dp-body">
               <article class="dp-article">
+                <div class="dp-spons" data-zap="the sponsored story" data-sponsored><small>Sponsored · Brightpath Loans</small><b>Rates from 3.9%. Check yours in two minutes.</b></div>
                 <p class="dp-kicker" data-zap="the section label">Cities</p>
                 <h3 class="dp-title" data-zap="the headline">The quiet streets plan: how one town took back its high street</h3>
                 <div class="dp-img" data-zap="the photo" role="img" aria-label="Photo"></div>
@@ -477,6 +506,23 @@ footer a:hover { color: var(--fg); }
               <div><button type="button" data-cookie="accept">Accept all</button><button type="button" data-cookie="reject" id="dp-reject">Reject all</button></div>
             </div>
             <div class="dp-toast" id="dp-toast" aria-hidden="true"></div>
+            <div class="dp-pick" id="dp-pick" role="dialog" aria-label="Hide an element" hidden>
+              <p id="dp-pick-text">Hide this on www.example.com?</p>
+              <div><button type="button" id="dp-pick-cancel">Cancel</button><button type="button" id="dp-pick-hide" class="on">Hide</button></div>
+            </div>
+            <div class="dp-scam" id="dp-scam" hidden>
+              <div class="dp-scam-alert" role="img" aria-label="A fake virus alert">
+                <b>⚠ WARNING: VIRUS DETECTED</b>
+                <p>Your computer is infected with 5 viruses. Your bank details are at risk.</p>
+                <p class="big">Call Support now: 1-800-555-0199</p>
+                <p>Do not close this window or restart your computer.</p>
+              </div>
+              <button type="button" class="dp-scam-back" id="dp-scam-back">Back to the news page</button>
+            </div>
+            <div class="dp-warn" id="dp-warn" role="alert" hidden>
+              <div><strong>This page looks like a scam</strong><span>because it shows a fake virus alert and asks you to call a phone number. Do not call numbers, pay or install anything it asks for.</span></div>
+              <button type="button" class="leave" id="dp-warn-leave">Leave page</button><button type="button" id="dp-warn-dismiss">Dismiss</button>
+            </div>
             <div class="dp-zapbar" id="dp-zapbar" hidden>
               <span>Click anything to remove it until you reload.</span><span class="dp-count" id="dp-zapcount"></span>
               <button type="button" id="dp-undo" disabled>Undo</button><button type="button" id="dp-done" class="on">Done</button>
@@ -512,10 +558,18 @@ footer a:hover { color: var(--fg); }
             <button type="button" data-try="the newsletter pop-up">the newsletter pop-up</button>
             <button type="button" data-try="chat bubble">chat bubble</button>
           </div>
+          <div class="dpn-card dpn-ai">
+            <p class="dpn-ai-head">On-device AI <span>opt-in, in Settings</span></p>
+            <div class="dpn-row"><span class="tile t-ads mini-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/><path d="M17 15l4 4M21 15l-4 4"/></svg></span><span>Hide sponsored content</span>
+              <button type="button" class="dpn-sw" id="dpn-spons" role="switch" aria-checked="false" aria-label="Hide sponsored content"><span></span></button></div>
+            <div class="dpn-row"><span class="tile t-dng mini-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M12 8v5M12 16.5h.01"/></svg></span><span>Warn about scam pages</span>
+              <button type="button" class="dpn-sw" id="dpn-scam" role="switch" aria-checked="false" aria-label="Warn about scam pages"><span></span></button></div>
+            <button type="button" class="dpn-visit" id="dpn-visit">Visit a scam page</button>
+          </div>
           <p class="dpn-status" id="dpn-status" role="status" aria-live="polite">Everything here runs on this page. Nothing is sent anywhere.</p>
         </div>
       </div>
-      <p class="demo-note reveal">A simulation of the real extension, for trying it in seconds. The real one works on every site, and "describe it" uses your browser's own on-device model where it has one.</p>
+      <p class="demo-note reveal">A simulation of the real extension, for trying it in seconds. The real one works on every site. "Describe it", sponsored hiding and scam warnings use clear rules everywhere, and in Chrome they can also ask the browser's own on-device model, so nothing leaves your device.</p>
     </div>
   </section>
 
@@ -821,8 +875,15 @@ footer a:hover { color: var(--fg); }
   const browserEl = demo.querySelector('.demo-browser');
   const showPage = () => { if (!matchMedia('(max-width: 960px)').matches) return; const r = browserEl.getBoundingClientRect(); if (r.top < 64 || r.top > innerHeight * 0.4) browserEl.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'start' }); };
 
+  const pick = $('dp-pick'), scamPage = $('dp-scam'), warn = $('dp-warn'), urlEl = $('demo-url');
+  const spSw = $('dpn-spons'), scamSw = $('dpn-scam');
+  let sponsored = false, scamWarn = false, picking = null;
+  function closePick() { if (picking) picking.forEach((el) => el.classList.remove('found')); picking = null; pick.hidden = true; }
+  function leaveScam() { scamPage.hidden = true; warn.hidden = true; warn.classList.remove('up'); urlEl.textContent = 'www.example.com'; }
+
   function load() {
     timers.forEach(clearTimeout); timers = []; toast.classList.remove('show');
+    closePick(); leaveScam(); demo.dataset.sponsored = sponsored ? 'on' : 'off';
     setZap(false);
     zapped.forEach((el) => el.classList.remove('gone', 'fading')); zapped = []; updateZapBar();
     page.querySelectorAll('[data-zap]').forEach((el) => { el.classList.remove('found'); el.classList.toggle('gone', hiddenForGood.has(el)); });
@@ -890,11 +951,34 @@ footer a:hover { color: var(--fg); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && demo.contains(document.activeElement)) { e.preventDefault(); undoBtn.click(); }
   });
 
-  // Describe it to hide it (the real extension asks the browser's on-device model; this demo matches words).
+  // On-device AI features (simulated). Sponsored hiding: clearly labelled blocks go by rules, unclear ones ask the model.
+  spSw.addEventListener('click', () => {
+    sponsored = !sponsored; setSwitch(spSw, sponsored); demo.dataset.sponsored = sponsored ? 'on' : 'off'; showPage();
+    say(sponsored ? 'Hid the sponsored story. It says "Sponsored", so a plain rule was enough. Unclear cases are what the on-device model checks.' : 'Sponsored content is shown again.');
+  });
+  scamSw.addEventListener('click', () => {
+    scamWarn = !scamWarn; setSwitch(scamSw, scamWarn);
+    say(scamWarn ? 'Scam warnings on. Now try "Visit a scam page".' : 'Scam warnings off.');
+  });
+  $('dpn-visit').addEventListener('click', () => {
+    timers.forEach(clearTimeout); timers = []; setZap(false); closePick(); toast.classList.remove('show');
+    urlEl.textContent = 'free-prize-alert.example'; scamPage.hidden = false; warn.hidden = true; warn.classList.remove('up'); showPage();
+    if (scamWarn) {
+      say('Quietfort spotted the warning signs: a fake virus alert and a phone number to call. It warns you but never blocks the page.');
+      later(600, () => { warn.hidden = false; requestAnimationFrame(() => warn.classList.add('up')); if (demo.contains(document.activeElement)) $('dp-warn-leave').focus({ preventScroll: true }); });
+    } else say('No warning, because "Warn about scam pages" is off. Go back, switch it on and try again.');
+  });
+  const backToNews = (msg) => { leaveScam(); say(msg); };
+  $('dp-warn-leave').addEventListener('click', () => { backToNews('You left the scam page. Nothing was blocked; you chose to leave.'); $('dpn-visit').focus({ preventScroll: true }); });
+  $('dp-warn-dismiss').addEventListener('click', () => { warn.classList.remove('up'); later(300, () => { warn.hidden = true; }); $('dp-scam-back').focus({ preventScroll: true }); say('Warning dismissed. The page is yours to judge.'); });
+  $('dp-scam-back').addEventListener('click', () => { backToNews('Back on the news page.'); $('dpn-visit').focus({ preventScroll: true }); });
+
+  // Describe it to hide it: finds the block, then asks before hiding (as the real extension does).
   const WORDS = [
+    [/sponsor|loan|brightpath|promoted/, '.dp-spons'],
     [/news ?letter|briefing|subscribe|sign ?up|e-?mail|inbox/, '.dp-news'],
     [/chat|bubble|help|support|messag/, '.dp-chat'],
-    [/\bads?\b|advert|banner ad|sale|sponsor|promo|trick/, '[data-ad]'],
+    [/\bads?\b|advert|banner ad|sale|promo|trick/, '[data-ad]'],
     [/photo|image|picture/, '.dp-img'],
     [/most read|popular|sidebar|side ?bar/, '.dp-card'],
     [/cookie|consent|privacy banner/, '#dp-cookie'],
@@ -904,13 +988,26 @@ footer a:hover { color: var(--fg); }
     const hit = WORDS.find(([re]) => re.test(text));
     if (!hit) { say('Couldn’t find "' + q.trim() + '" on this page. Try "newsletter" or "chat bubble".'); return; }
     if (hit[1] === '#dp-cookie') { if (!cookie.hidden && cookie.classList.contains('up')) closeCookie(); say('Cookie banners are handled by "Reject cookie banners", no need to hide them.'); return; }
+    if (!scamPage.hidden) leaveScam();
+    closePick();
     const els = [...page.querySelectorAll(hit[1])].filter((el) => !el.classList.contains('gone') && getComputedStyle(el).maxHeight !== '0px');
     if (!els.length) { say(hit[1] === '[data-ad]' && blocking ? 'The ads are already blocked. Switch blocking off to see them.' : 'That’s already hidden.'); return; }
-    els.forEach((el) => el.classList.add('found')); showPage();
-    say('Found ' + els[0].dataset.zap + '. Hiding it…');
-    later(900, () => els.forEach((el) => { el.classList.remove('found'); el.classList.add('fading'); later(220, () => { el.classList.remove('fading'); el.classList.add('gone'); hiddenForGood.add(el); }); }));
-    later(1150, () => say('Hidden ' + els[0].dataset.zap + '. It stays hidden on this site, even after a reload.'));
+    setZap(false);
+    picking = els; els.forEach((el) => el.classList.add('found')); showPage();
+    $('dp-pick-text').textContent = 'Hide ' + els[0].dataset.zap + ' on www.example.com?';
+    // Keep the confirm box clear of what it outlines.
+    const pr = page.getBoundingClientRect(), er = els[0].getBoundingClientRect();
+    pick.classList.toggle('top', er.top + er.height / 2 > pr.top + pr.height / 2);
+    pick.hidden = false; $('dp-pick-hide').focus({ preventScroll: true });
+    say('Found ' + els[0].dataset.zap + ' (outlined). Press Hide to keep it hidden on this site, or Cancel.');
   }
+  $('dp-pick-hide').addEventListener('click', () => {
+    const els = picking || []; picking = null; pick.hidden = true; if (!els.length) return;
+    els.forEach((el) => { el.classList.remove('found'); el.classList.add('fading'); later(220, () => { el.classList.remove('fading'); el.classList.add('gone'); hiddenForGood.add(el); }); });
+    say('Hidden ' + els[0].dataset.zap + '. It stays hidden on this site, even after a reload.'); $('dpn-q').focus({ preventScroll: true });
+  });
+  $('dp-pick-cancel').addEventListener('click', () => { closePick(); say('Nothing hidden.'); $('dpn-q').focus({ preventScroll: true }); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && picking) { closePick(); say('Nothing hidden.'); } });
   $('dpn-describe').addEventListener('submit', (e) => { e.preventDefault(); describe($('dpn-q').value); });
   document.querySelectorAll('[data-try]').forEach((b) => b.addEventListener('click', () => { $('dpn-q').value = b.dataset.try; describe(b.dataset.try); }));
 

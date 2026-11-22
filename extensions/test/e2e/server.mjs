@@ -444,6 +444,7 @@ function describePage() {
   </style></head><body>
   <header class="masthead" style="height:80px">Daily Example — Home · News · Sport</header>
   <article class="story" style="width:800px;min-height:900px">Latest headlines from today. The council met to discuss the plan. More text follows here about the city budget.</article>
+  <aside class="weather-box" style="margin-top:300px;height:120px;width:300px">Weather: light rain, 12°</aside>
   <div class="nl-modal" role="dialog" aria-modal="true"><h2>Subscribe to our newsletter</h2><p>Get the best stories in your inbox every morning.</p><button>Sign up</button></div>
   <div id="chat-launcher" class="intercom-launcher" aria-label="Open chat"></div>
   <img id="custom" src="http://custom-block.test/pixel.gif" width="1" height="1">

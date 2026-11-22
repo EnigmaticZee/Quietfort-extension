@@ -36,7 +36,7 @@ import type { CustomList } from '../shared/catalogue.ts';
 import { allowContinue, clearTempProtectionRules, protDebug, getHostSet, getProtectionSet, guardHits, hostSetStats, registerNavigationGuard, registerProtectionCleanup, reloadHostSet } from './protection.ts';
 import type { HostSetStats } from './protection.ts';
 import {
-  aiInit, aiReport, aiTabStatus, classifySponsored, clearAiCache, confirmScam, cookieClickFor, cookieLock, forgetCookiePlan, mayReportCookie, modelAvailability, modelDebug,
+  aiInit, aiReport, aiTabStatus, classifySponsored, clearAiCache, confirmScam, cookieClickFor, cookieLock, forgetCookiePlan, mayReportCookie, modelAvailability, modelDebug, warmModel,
   registerAi, resetAiTab, saveCookiePlan, saveSponsoredVerdicts, setModelStub,
 } from './ai.ts';
 import type { ModelStub } from './ai.ts';
@@ -936,6 +936,11 @@ B.runtime.onMessage.addListener((raw: unknown, sender, sendResponse) => {
         const list = set.lookup(String(msg.host ?? ''));
         return { list, us: (performance.now() - t0) * 1000 };
       });
+      break;
+    case 'ai:warm':
+      if (!fromExtensionPage(sender)) return false;
+      void warmModel();
+      p = Promise.resolve({ ok: true });
       break;
     case 'ai:status':
       p = modelAvailability().then((model) => ({ model, debug: modelDebug() }));

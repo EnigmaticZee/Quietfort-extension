@@ -82,6 +82,25 @@ export async function modelAvailability(): Promise<Availability> {
 const SYSTEM: Record<Task, string> = { sponsored: SPONSORED_SYSTEM, scam: SCAM_SYSTEM, cookie: COOKIE_SYSTEM, describe: DESCRIBE_SYSTEM };
 
 let queue: Promise<unknown> = Promise.resolve();
+let warmedAt = 0;
+
+/**
+ * Starts loading the model while the person is still typing a description, so the answer does not
+ * wait for the first load (~30 s after the browser starts). At most once a minute; only when the
+ * model is already downloaded. Sends no page content.
+ */
+export async function warmModel(): Promise<void> {
+  if (stub || Date.now() - warmedAt < 60000) return;
+  const api = lm();
+  if (!api || (await modelAvailability()) !== 'available') return;
+  warmedAt = Date.now();
+  const run = queue.then(async () => {
+    const session = await api.create({ ...LM_OPTS, initialPrompts: [{ role: 'system', content: DESCRIBE_SYSTEM }] });
+    session.destroy();
+  });
+  queue = run.catch(() => undefined);
+  await run.catch((err) => log('model warm-up failed', String(err)));
+}
 
 /** One prompt, JSON-constrained, serialised; resolves to the parsed JSON or null. */
 async function prompt(task: Task, input: string, schema: unknown): Promise<unknown> {
@@ -141,9 +160,9 @@ export async function nextCookieClick(input: string, offered: Clickable[]): Prom
 }
 
 /** "Describe it to hide it": the block the model picks for `description` (index into `blocks`), or -1 / null without a model. */
-export async function describeWithModel(description: string, blocks: BlockSummary[], order: number[]): Promise<number | null> {
+export async function describeWithModel(description: string, blocks: BlockSummary[], order: number[], viewport?: { w: number; h: number }): Promise<number | null> {
   if ((await modelAvailability()) !== 'available') return null;
-  const r = await prompt('describe', describePrompt(description, blocks, order), describeSchema(order.length));
+  const r = await prompt('describe', describePrompt(description, blocks, order, viewport), describeSchema(order.length));
   return r === null ? null : readDescribeAnswer(r, order);
 }
 

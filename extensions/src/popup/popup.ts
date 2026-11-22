@@ -168,6 +168,8 @@ function renderPause(s: State, tabId: number): void {
     void api.tabs.create({ url: api.runtime.getURL(`log.html?tabId=${tabId}`) });
     window.close();
   };
+  // Start loading the on-device model (if it is downloaded) while the person types.
+  ($('describe-text') as HTMLInputElement).addEventListener('focus', () => { void api.runtime.sendMessage({ type: 'ai:warm' }).catch(() => undefined); }, { once: true });
   ($('describe-form') as HTMLFormElement).onsubmit = async (ev) => {
     ev.preventDefault();
     const input = $('describe-text') as HTMLInputElement;
@@ -180,7 +182,9 @@ function renderPause(s: State, tabId: number): void {
     ($('describe-go') as HTMLButtonElement).disabled = true;
     st.hidden = false;
     st.textContent = 'Looking…';
+    const slow = setTimeout(() => { st.textContent = 'Looking… The first search after starting the browser takes a few seconds.'; }, 2500);
     const res = (await api.runtime.sendMessage({ type: 'popup:describe', tabId, text }).catch((err) => ({ ok: false, error: String(err) }))) as { ok: boolean; found?: boolean; error?: string };
+    clearTimeout(slow);
     ($('describe-go') as HTMLButtonElement).disabled = false;
     if (!res?.ok) st.textContent = `Couldn\u2019t look at this page: ${res?.error ?? 'unknown error'}`;
     else if (!res.found) st.textContent = 'Nothing on this page matches that. Try other words, or use \u201cHide an element\u201d.';

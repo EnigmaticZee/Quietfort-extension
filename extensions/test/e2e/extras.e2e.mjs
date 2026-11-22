@@ -148,6 +148,29 @@ try {
   }), 4000);
   const matchesModal = pickedSel ? await site.evaluate((s) => { try { const els = document.querySelectorAll(s); return els.length === 1 && els[0].classList.contains('nl-modal'); } catch { return false; } }, pickedSel) : false;
   h.check('describe: picker opens on the newsletter modal', matchesModal, pickedSel);
+  // A second description while the picker is still open moves it to the new element.
+  const firstCand = () => site.evaluate(() => document.getElementById('__adb_picker')?.shadowRoot?.querySelector('label.cand')?.dataset.selector ?? null);
+  const d2 = await send({ type: 'popup:describe', tabId: tid, text: 'chat bubble' });
+  const movedSel = await waitFor(async () => { const sel = await firstCand(); return sel && sel !== pickedSel ? sel : null; }, 4000);
+  const movedOk = movedSel ? await site.evaluate((s) => { try { const els = document.querySelectorAll(s); return els.length === 1 && els[0].id === 'chat-launcher'; } catch { return false; } }, movedSel) : false;
+  const hosts = await site.evaluate(() => document.querySelectorAll('#__adb_picker').length);
+  h.check('describe: a second description moves the open picker (one picker)', d2.ok && d2.found && movedOk && hosts === 1, { movedSel, hosts });
+  // Something below the fold: the page scrolls to it and the outline sits on it, also after the person scrolls.
+  const onTarget = () => site.evaluate(() => {
+    const box = document.getElementById('__adb_picker')?.shadowRoot?.querySelector('.box.sel');
+    const el = document.querySelector('.weather-box');
+    if (!box || !el) return null;
+    const a = box.getBoundingClientRect(), b = el.getBoundingClientRect();
+    return { box: Math.round(a.top), el: Math.round(b.top), inView: b.top >= 0 && b.bottom <= innerHeight };
+  });
+  const dw = await send({ type: 'popup:describe', tabId: tid, text: 'the weather' });
+  const w1 = await waitFor(async () => { const r = await onTarget(); return r && Math.abs(r.box - r.el) <= 2 ? r : null; }, 4000);
+  h.check('describe: below the fold, the page scrolls and the outline is on it', dw.found && w1 && w1.inView, { dw, w1: w1 ?? (await onTarget()) });
+  await site.evaluate(() => scrollBy(0, -120));
+  const w2 = await waitFor(async () => { const r = await onTarget(); return r && Math.abs(r.box - r.el) <= 2 ? r : null; }, 2000);
+  h.check('describe: the outline follows the page when it scrolls', !!w2, await onTarget());
+  await send({ type: 'popup:describe', tabId: tid, text: 'the newsletter pop-up' });
+  await waitFor(async () => ((await firstCand()) === pickedSel ? true : null), 4000);
   // Press Hide in the picker.
   await site.evaluate(() => document.getElementById('__adb_picker').shadowRoot.getElementById('adb-save').click());
   await sleep(500);
@@ -156,7 +179,7 @@ try {
   await site.reload({ waitUntil: 'load' });
   await sleep(500);
   h.check('describe: stays hidden after reload', (await site.$eval('.nl-modal', (e) => getComputedStyle(e).display)) === 'none');
-  const none = await send({ type: 'popup:describe', tabId: tid, text: 'weather forecast' });
+  const none = await send({ type: 'popup:describe', tabId: tid, text: 'stock ticker' });
   h.check('describe: nothing matching → not found, nothing opened', none.ok && !none.found, none);
 
   // ---------- right-click "Hide this element" ----------
