@@ -315,3 +315,24 @@ test('performance: parse + check stay within budget on synthetic 100k-rule list'
   assert.ok(parseMs < 3000, `parse ${parseMs} ms`);
   assert.ok(checkMs < 1000, `10k checks ${checkMs} ms`);
 });
+
+test('page fixes from downloaded lists are kept apart (Chrome full protection)', () => {
+  const list = 'example.com##+js(set-constant, adsOn, false)\nexample.com##.promo:has-text(Sale)\nother.com##+js(nowebrtc)';
+  const mine = 'example.com##+js(nobab)\nexample.com##.box:has-text(Hello)';
+  const e = Engine.fromLists([{ text: list, remote: true }, mine]);
+  const names = (scope: 'all' | 'local' | 'remote') => e.scriptlets('example.com', scope).map((s) => s.name);
+  // ("nobab" is stored under its full name.)
+  assert.deepEqual(names('local'), ['prevent-adblock-detector']);
+  assert.deepEqual(names('remote'), ['set-constant']);
+  assert.deepEqual(names('all').sort(), ['prevent-adblock-detector', 'set-constant']);
+  assert.deepEqual(e.procedural('example.com', 'local'), ['.box:has-text(Hello)']);
+  assert.deepEqual(e.procedural('example.com', 'remote'), ['.promo:has-text(Sale)']);
+  assert.equal(e.procedural('example.com').length, 2);
+  // Default (Firefox, Safari): everything, as before.
+  assert.equal(e.scriptlets('example.com').length, 2);
+  // An exception from any source cancels a list fix (here: the person's own exception).
+  const ex = Engine.fromLists([{ text: list, remote: true }, 'example.com#@#+js(set-constant, adsOn, false)']);
+  assert.deepEqual(ex.scriptlets('example.com', 'remote'), []);
+  // Plain strings (My Rules, picker) count as the person's own.
+  assert.equal(Engine.fromLists([list]).scriptlets('example.com', 'remote').length, 0);
+});

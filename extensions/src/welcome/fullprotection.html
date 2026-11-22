@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<!-- Chrome: how to turn on full protection, and "Done" once Chrome's "Allow User Scripts" switch is on. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Full protection – Quietfort</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    body { width: auto; max-width: 560px; margin: 0 auto; padding: 40px 20px 48px; gap: 12px; font-size: 14px; }
+    .top { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+    .top .badge { width: 52px; height: 52px; border-radius: 13px; }
+    .top .badge svg { width: 26px; height: 30px; }
+    h1 { font-size: 24px; margin: 0; letter-spacing: -.01em; }
+    .lead { color: var(--muted); }
+    ol { margin: 0; padding-left: 20px; }
+    ol li { margin: 6px 0; }
+    .muted { color: var(--muted); font-size: 12.5px; }
+    .done { display: flex; align-items: center; gap: 10px; }
+    .done .tick { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--on-accent, #fff); display: grid; place-items: center; font-weight: 700; flex: none; }
+    button.primary { align-self: flex-start; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <span class="badge" aria-hidden="true">
+      <svg viewBox="26 24 48 56"><path d="M28 26h8v5h6v-5h16v5h6v-5h8v23c0 15-9.5 24.5-22 29.5C37.5 73.5 28 64 28 49z" fill="#fff"/><rect x="38" y="47" width="24" height="7" rx="3.5" fill="#0B3C45"/></svg>
+    </span>
+    <div><h1 id="fp-title">Full protection</h1><p class="lead" id="fp-lead">Checking…</p></div>
+  </div>
+
+  <section id="fp-off" class="card" hidden>
+    <p>Chrome lets extensions use the filter lists’ page fixes, which handle YouTube ads and sites that block ad blockers, only after you allow it with one switch. Everything else already works without it.</p>
+    <ol>
+      <li>Press <strong>Open Chrome’s switch</strong>. Chrome opens Quietfort’s settings.</li>
+      <li>Turn on <strong>Allow User Scripts</strong>.</li>
+      <li>That’s it. This page shows when it’s on.</li>
+    </ol>
+    <button id="fp-open" type="button" class="primary">Open Chrome’s switch</button>
+    <p class="muted">Chrome shows the same general warning next to this switch for every extension that uses it. The fixes come from the same filter lists Quietfort already uses and run only on your device. Quietfort’s code is open source.</p>
+  </section>
+
+  <section id="fp-on" class="card" hidden>
+    <p class="done"><span class="tick" aria-hidden="true">✓</span><strong>Full protection is on.</strong></p>
+    <p>Quietfort now also uses the filter lists’ page fixes, for example for YouTube ads and sites that block ad blockers. Tabs that were already open get them after a reload.</p>
+    <p class="muted">To turn it off again, switch off “Allow User Scripts” on Quietfort’s page in Chrome’s extension settings.</p>
+  </section>
+
+  <section id="fp-na" class="card" hidden>
+    <p>Nothing to do in this browser: Quietfort already uses everything in the filter lists here.</p>
+  </section>
+
+  <script src="fullprotection.js"></script>
+</body>
+</html>

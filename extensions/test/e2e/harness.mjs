@@ -33,3 +33,21 @@ export async function waitFor(fn, timeoutMs = 5000, stepMs = 100) {
     await sleep(stepMs);
   }
 }
+
+/**
+ * Turns on Chrome's "Allow User Scripts" switch on an extension's details page
+ * (chrome://extensions/?id=…), as a person would. Returns true when clicked.
+ */
+export async function allowUserScripts(detailsPage) {
+  const click = () => detailsPage.evaluate(() => {
+    const all = [];
+    const walk = (root) => { for (const el of root.querySelectorAll('*')) { if (el.shadowRoot) walk(el.shadowRoot); all.push(el); } };
+    walk(document);
+    const row = all.find((e) => e.tagName === 'EXTENSIONS-TOGGLE-ROW' && e.id === 'allow-user-scripts');
+    const t = row && (row.shadowRoot?.querySelector('cr-toggle') || row.querySelector('cr-toggle'));
+    if (!t) return false;
+    if (!t.checked) t.click();
+    return true;
+  });
+  return waitFor(click, 8000, 200);
+}

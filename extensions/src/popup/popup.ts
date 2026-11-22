@@ -90,6 +90,7 @@ async function render(): Promise<void> {
   toggle.disabled = !s.host || !!s.pausedUntil;
   $('toggle-label').textContent = !s.host ? 'Not available on this page' : s.pausedUntil ? 'Paused everywhere' : s.enabled ? 'Blocking is on for this site' : 'Blocking is off for this site';
   renderPause(s, tab.id);
+  void renderFullProtection(tab.id);
   $('log-open').hidden = s.platform === 'safari';
   if (s.platform === 'safari') {
     // Safari doesn't tell extensions which requests its content blocker stopped, so a
@@ -137,6 +138,16 @@ function untilText(ts: number): string {
   const sameDay = d.toDateString() === new Date().toDateString();
   const time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   return sameDay ? `until ${time}` : `until ${d.toLocaleDateString([], { weekday: 'long' })} ${time}`;
+}
+
+/** Chrome: the lists' page fixes for this site wait for Chrome's "Allow User Scripts" switch. */
+async function renderFullProtection(tabId: number): Promise<void> {
+  const f = (await api.runtime.sendMessage({ type: 'fp:status', tabId }).catch(() => null)) as { gated: boolean; on: boolean; waiting: number } | null;
+  $('fullprot').hidden = !f || !f.gated || f.on || f.waiting === 0;
+  $('fullprot-go').onclick = () => {
+    void api.runtime.sendMessage({ type: 'fp:start' });
+    if (!new URLSearchParams(location.search).get('tabId')) setTimeout(() => window.close(), 300);
+  };
 }
 
 function renderPause(s: State, tabId: number): void {

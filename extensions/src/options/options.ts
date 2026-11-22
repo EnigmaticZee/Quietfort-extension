@@ -364,13 +364,27 @@ $('backup-file').onchange = async () => {
   void renderLists();
 };
 
+/** Chrome: full protection (the "Allow User Scripts" switch). */
+async function renderFullProtection(): Promise<void> {
+  const f = (await api.runtime.sendMessage({ type: 'fp:status' }).catch(() => null)) as { gated: boolean; on: boolean } | null;
+  $('fullprot-section').hidden = !f?.gated;
+  if (!f?.gated) return;
+  $('fullprot-state').textContent = f.on ? 'On' : 'Off';
+  ($('fullprot-go') as HTMLButtonElement).hidden = f.on;
+  $('fullprot-go').onclick = () => void api.runtime.sendMessage({ type: 'fp:start' });
+}
+
 void renderSettings();
 void render();
 void renderRules();
 void renderSites();
 void renderLists();
+void renderFullProtection();
 setInterval(() => {
-  if (document.visibilityState === 'visible') void renderLists();
+  if (document.visibilityState === 'visible') {
+    void renderLists();
+    void renderFullProtection();
+  }
 }, 4000);
 
 startE2eAgent('options', () => ({

@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fullMalwareList, startServer } from './server.mjs';
-import { createHarness, sleep, waitFor } from './harness.mjs';
+import { allowUserScripts, createHarness, sleep, waitFor } from './harness.mjs';
 import { siteFixCases, pickerCases } from './sitefix-cases.mjs';
 import { consentCases } from './consent-cases.mjs';
 import { featureCases } from './feature-cases.mjs';
@@ -90,6 +90,48 @@ try {
   const alarm = await swEval(async () => chrome.alarms.get('refresh-lists'));
   h.check('24h refresh alarm scheduled (hourly staleness check)', alarm?.periodInMinutes === 60, alarm);
   h.info('DNR limits reported by Chrome', dnr.limits);
+
+  // ---------- full protection (Chrome's "Allow User Scripts" switch) ----------
+  // The lists' page fixes (scriptlets, procedural filters) are instructions downloaded at runtime: Chrome
+  // runs them only through the User Scripts API, after the person turns on the switch.
+  {
+    const ext = await browser.newPage();
+    await ext.goto(`chrome-extension://${extId}/options.html`);
+    const send = (m) => ext.evaluate((x) => chrome.runtime.sendMessage(x), m);
+    const before = await send({ type: 'rules:get' });
+    await send({ type: 'rules:set', text: `${before.text ? `${before.text}\n` : ''}publisher.test##+js(set-constant, myOwnFix, true)` });
+    const pg = await browser.newPage();
+    await pg.goto(`http://publisher.test${P}/page.html`, { waitUntil: 'load' });
+    await sleep(1500);
+    const pgTab = await swEval(async () => (await chrome.tabs.query({})).find((t) => (t.url || '').startsWith('http://publisher.test/'))?.id);
+    const s0 = await pg.evaluate(() => ({ adEnabled: window.adConfig?.enabled, own: window.myOwnFix }));
+    const fp0 = await send({ type: 'fp:status', tabId: pgTab });
+    h.check('full protection off by default: the lists\' page fixes wait (scriptlet, :has-text)', s0.adEnabled === true && (await display(pg, '#sponsored')) !== 'none' && fp0.gated && !fp0.on && fp0.waiting >= 2, { s0, fp0 });
+    h.check('full protection off: list blocking and hiding rules still work', (await display(pg, '#specific-ad')) === 'none' && (await display(pg, '#generic-ad')) === 'none' && hits('ads.adnet.test', '/ads/ad.js').length === 0);
+    h.check('full protection off: the person\'s own page fixes (My Rules) still run', s0.own === true, s0);
+    const pop = await browser.newPage();
+    await pop.goto(`chrome-extension://${extId}/popup.html?tabId=${pgTab}`);
+    const card = await waitFor(() => pop.evaluate(() => !document.getElementById('fullprot').hidden), 3000);
+    h.check('panel offers "Turn on full protection" on a site with waiting fixes', card);
+    await pop.click('#fullprot-go');
+    const details = await waitFor(async () => (await browser.pages()).find((x) => x.url().startsWith('chrome://extensions')), 5000);
+    h.check('"Turn on full protection" opens Chrome\'s page for Quietfort', !!details && details.url().includes(extId), details?.url());
+    const flipped = details ? await allowUserScripts(details) : false;
+    const done = await waitFor(async () => (await browser.pages()).find((x) => x.url().includes('fullprotection.html?done=1')), 8000, 200);
+    const doneShown = done ? await waitFor(() => done.evaluate(() => !document.getElementById('fp-on').hidden), 4000) : false;
+    h.check('after the switch: Quietfort notices and shows "Full protection is on"', flipped && !!done && doneShown, { flipped, done: done?.url() });
+    await pg.reload({ waitUntil: 'load' });
+    await sleep(1500);
+    const s1 = await pg.evaluate(() => ({ adEnabled: window.adConfig?.enabled, own: window.myOwnFix }));
+    h.check('full protection on: the lists\' page fixes run', s1.adEnabled === false && (await display(pg, '#sponsored')) === 'none' && s1.own === true, s1);
+    const reg = await swEval(async () => ({ us: (await chrome.userScripts.getScripts()).map((x) => x.id), cs: (await chrome.scripting.getRegisteredContentScripts()).map((x) => x.id) }));
+    h.check('full protection on: the page-fix runner is a user script (User Scripts API), not a content script', reg.us.includes('adb-scriptlets') && !reg.cs.includes('adb-scriptlets'), reg);
+    const fp1 = await send({ type: 'fp:status', tabId: pgTab });
+    h.check('full protection on: status on, panel card hidden', fp1.on && fp1.waiting === 0, fp1);
+    await send({ type: 'rules:set', text: before.text ?? '' });
+    for (const x of [pg, pop, done, details, ext]) await x?.close().catch(() => undefined);
+    log.splice(0); // the checks below count requests from their own page loads
+  }
 
   // ---------- publisher page ----------
   const page = await browser.newPage();
@@ -236,6 +278,23 @@ try {
     return n === dnr.installedDynamic ? n : 0;
   }, 10000, 250);
   h.check('after browser restart: DNR rules present (self-healed if dropped)', rulesAfter === dnr.installedDynamic, rulesAfter);
+  // The CDP reinstall also resets Chrome's "Allow User Scripts" switch (a real restart keeps it). Quietfort must
+  // notice that it is off; then the person turns it on again.
+  {
+    const ext = await browser.newPage();
+    await ext.goto(`chrome-extension://${extId}/options.html`);
+    const fpR = await ext.evaluate(() => chrome.runtime.sendMessage({ type: 'fp:status' }));
+    h.info('after reinstall: full protection', fpR);
+    if (!fpR.on) {
+      const det = await browser.newPage();
+      await det.goto(`chrome://extensions/?id=${extId}`);
+      await allowUserScripts(det);
+      const on = await waitFor(async () => (await ext.evaluate(() => chrome.runtime.sendMessage({ type: 'fp:status' }))).on, 6000, 250);
+      h.check('after reinstall: switch turned on again, Quietfort sees it', !!on);
+      await det.close();
+    }
+    await ext.close();
+  }
   const page3 = await browser.newPage();
   await page3.goto(`http://publisher.test${P}/page.html`, { waitUntil: 'load' });
   await sleep(1500);

@@ -18,7 +18,8 @@ import type { DnrStatus } from './dnr-apply.ts';
 import { registerPopupBlocker, recentlyBlocked } from './popup-blocker.ts';
 import { registerNavigationRules } from './navigation.ts';
 import { addBlocked, getCount, removeTab, resetTab } from './counts.ts';
-import { onContentInit, onContentScriptlets, onContentTokens, registerScriptletInjection } from './cosmetics.ts';
+import { onContentInit, onContentScriptlets, onContentTokens, registerScriptletInjection, waitingFixes } from './cosmetics.ts';
+import { GATED, fullProtectionOn, startFullProtection } from './fullprotection.ts';
 import { registerFirefoxWebRequest } from './webrequest-firefox.ts';
 import { keepBackgroundAlive } from './keepalive.ts';
 import { consumeOwnReload, onTopCommit, recordBlocked, recordJsError, recordToggle, removeTabData, signalsFor } from './tabdata.ts';
@@ -936,6 +937,24 @@ B.runtime.onMessage.addListener((raw: unknown, sender, sendResponse) => {
         const list = set.lookup(String(msg.host ?? ''));
         return { list, us: (performance.now() - t0) * 1000 };
       });
+      break;
+    case 'fp:status':
+      // Full protection (Chrome): is the switch on, and how many list fixes wait on this tab's site.
+      if (!fromExtensionPage(sender)) return false;
+      p = (async () => {
+        const on = await fullProtectionOn(0);
+        let waiting = 0;
+        if (GATED && !on && typeof msg.tabId === 'number') {
+          const t = await B.tabs.get(msg.tabId).catch(() => null);
+          const h = t?.url && /^https?:/i.test(t.url) ? hostOf(t.url) : null;
+          if (h) waiting = await waitingFixes(h);
+        }
+        return { gated: GATED, on, waiting };
+      })();
+      break;
+    case 'fp:start':
+      if (!fromExtensionPage(sender)) return false;
+      p = startFullProtection().then(() => ({ ok: true }));
       break;
     case 'ai:warm':
       if (!fromExtensionPage(sender)) return false;

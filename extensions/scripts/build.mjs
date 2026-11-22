@@ -142,8 +142,9 @@ function manifest(platform) {
   if (platform === 'chrome') {
     return {
       ...common,
-      minimum_chrome_version: '121',
-      permissions: ['declarativeNetRequest', ...base, 'webRequest'],
+      // 138: Chrome's per-extension "Allow User Scripts" switch (full protection, background/fullprotection.ts).
+      minimum_chrome_version: '138',
+      permissions: ['declarativeNetRequest', ...base, 'webRequest', 'userScripts'],
       background: { service_worker: 'background.js' },
     };
   }
@@ -217,6 +218,7 @@ for (const platform of TARGETS) {
       zap: join(ROOT, 'src/content/zap.ts'),
       describe: join(ROOT, 'src/content/describe.ts'),
       welcome: join(ROOT, 'src/welcome/welcome.ts'),
+      fullprotection: join(ROOT, 'src/welcome/fullprotection.ts'),
       log: join(ROOT, 'src/log/log.ts'),
       errors: join(ROOT, 'src/content/errors-main.ts'),
       gpc: join(ROOT, 'src/content/gpc-main.ts'),
@@ -240,6 +242,9 @@ for (const platform of TARGETS) {
   cpSync(join(ROOT, 'src/options/options.html'), join(out, 'options.html'));
   cpSync(join(ROOT, 'src/blocked/blocked.html'), join(out, 'blocked.html'));
   cpSync(join(ROOT, 'src/welcome/welcome.html'), join(out, 'welcome.html'));
+  // Full protection (Chrome's "Allow User Scripts" switch) exists only in Chrome-family builds.
+  if (platform === 'chrome') cpSync(join(ROOT, 'src/welcome/fullprotection.html'), join(out, 'fullprotection.html'));
+  else rmSync(join(out, 'fullprotection.js'), { force: true });
   cpSync(join(ROOT, 'src/log/log.html'), join(out, 'log.html'));
   cpSync(join(ROOT, 'resources'), join(out, 'resources'), { recursive: true });
   writeFileSync(join(out, 'resources', '1x1.gif'), GIF_1X1);

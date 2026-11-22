@@ -63,7 +63,16 @@ function applyUriTransform(nav: { re: string; flags: string; replacement: string
 export interface ListInput {
   text: string;
   trusted?: boolean;
+  /**
+   * Downloaded at runtime (a filter list), as opposed to written by the person (My Rules) or made by the
+   * element picker. Its scriptlets and procedural filters are kept apart: Chrome runs them only through the
+   * User Scripts API (see `scriptlets(host, 'local' | 'remote')`).
+   */
+  remote?: boolean;
 }
+
+/** Which page-fix rules to return: all, or only those from downloaded lists / only the person's own. */
+export type RuleScope = 'all' | 'local' | 'remote';
 
 export interface RequestInfo {
   /** Absolute URL, original case. */
@@ -420,6 +429,9 @@ export class Engine {
   cosmetics = new CosmeticIndex();
   scriptletIndex = new DomainIndex<Scriptlet>();
   proceduralIndex = new DomainIndex<string>();
+  /** Scriptlets and procedural filters from downloaded lists (exceptions from any source apply to both). */
+  remoteScriptletIndex = new DomainIndex<Scriptlet>();
+  remoteProceduralIndex = new DomainIndex<string>();
   styleIndex = new DomainIndex<[string, string]>();
   private overlay: Overlay | null = null;
   /** Network rules after $badfilter, in list order (input of the DNR compiler). */
@@ -441,7 +453,7 @@ export class Engine {
     const network: Array<[NetworkRule, number]> = [];
     const badfilters = new Set<string>();
     lists.forEach((input, listIdx) => {
-      const { text: list, trusted = false } = typeof input === 'string' ? { text: input } : input;
+      const { text: list, trusted = false, remote = false } = typeof input === 'string' ? { text: input } : input;
       const lines = list.includes('!#if') ? activeLines(list, env) : list.split(/\r?\n/);
       for (const line of lines) {
         const p = parseLine(line, trusted);
@@ -451,8 +463,10 @@ export class Engine {
           case 'cosmetic': e.cosmetics.add(p.rule); e.stats.cosmetic++; break;
           case 'procedural':
             e.stats.procedural++;
-            if (p.rule.exception) e.proceduralIndex.addException(p.rule.includeDomains, p.rule.selector);
-            else e.proceduralIndex.add(p.rule.includeDomains, p.rule.excludeDomains, p.rule.selector);
+            if (p.rule.exception) {
+              e.proceduralIndex.addException(p.rule.includeDomains, p.rule.selector);
+              e.remoteProceduralIndex.addException(p.rule.includeDomains, p.rule.selector);
+            } else (remote ? e.remoteProceduralIndex : e.proceduralIndex).add(p.rule.includeDomains, p.rule.excludeDomains, p.rule.selector);
             break;
           case 'style': {
             e.stats.styles++;
@@ -463,8 +477,11 @@ export class Engine {
           }
           case 'scriptlet':
             e.stats.scriptlets++;
-            if (p.exception) e.scriptletIndex.addException(p.includeDomains, p.scriptlet ? scriptletKey(p.scriptlet) : null);
-            else if (p.scriptlet) e.scriptletIndex.add(p.includeDomains, p.excludeDomains, p.scriptlet);
+            if (p.exception) {
+              const key = p.scriptlet ? scriptletKey(p.scriptlet) : null;
+              e.scriptletIndex.addException(p.includeDomains, key);
+              e.remoteScriptletIndex.addException(p.includeDomains, key);
+            } else if (p.scriptlet) (remote ? e.remoteScriptletIndex : e.scriptletIndex).add(p.includeDomains, p.excludeDomains, p.scriptlet);
             break;
           case 'ignored': e.stats.ignored++; break;
           case 'unsupported':
@@ -612,17 +629,27 @@ export class Engine {
     return out;
   }
 
-  scriptlets(host: string): Scriptlet[] {
+  scriptlets(host: string, scope: RuleScope = 'all'): Scriptlet[] {
     const h = host.replace(/\.+$/, '').toLowerCase();
     if (this.pageFlags(h).document) return [];
-    return this.scriptletIndex.query(h, scriptletKey, this.overlay?.scriptlet);
+    const local = scope === 'remote' ? [] : this.scriptletIndex.query(h, scriptletKey, this.overlay?.scriptlet);
+    if (scope === 'local') return local;
+    const remote = this.remoteScriptletIndex.query(h, scriptletKey, this.overlay?.scriptlet);
+    if (scope === 'remote' || !local.length) return remote;
+    // Same order as before the split: lists first, then the person's own rules.
+    const seen = new Set(remote.map(scriptletKey));
+    return [...remote, ...local.filter((x) => !seen.has(scriptletKey(x)))];
   }
 
-  procedural(host: string): string[] {
+  procedural(host: string, scope: RuleScope = 'all'): string[] {
     const h = host.replace(/\.+$/, '').toLowerCase();
     const f = this.pageFlags(h);
     if (f.document || f.elemhide) return [];
-    return this.proceduralIndex.query(h, (s) => s, this.overlay?.procedural);
+    const local = scope === 'remote' ? [] : this.proceduralIndex.query(h, (s) => s, this.overlay?.procedural);
+    if (scope === 'local') return local;
+    const remote = this.remoteProceduralIndex.query(h, (s) => s, this.overlay?.procedural);
+    if (scope === 'remote' || !local.length) return remote;
+    return [...new Set([...remote, ...local])];
   }
 
   private activeModifiers(info: RequestInfo, kind: string): Modifier[] {

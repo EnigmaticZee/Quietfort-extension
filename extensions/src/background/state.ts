@@ -299,7 +299,7 @@ export function getEngine(): Promise<Engine | null> {
         // Trusted-only scriptlets: only catalogue lists marked trusted, and only
         // when fetched from the catalogue URL (not an override or custom list).
         if (l?.text) {
-          texts.push({ text: l.text, trusted: isTrustedSource(src, l.url) });
+          texts.push({ text: l.text, trusted: isTrustedSource(src, l.url), remote: true });
           ids.push(src.id);
         }
       });

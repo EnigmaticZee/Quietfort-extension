@@ -47,5 +47,15 @@ void (async () => {
     r.onchange = () => void saveTheme(r.value as Theme);
   }
 })();
+/** Chrome: offer full protection (the "Allow User Scripts" switch) and show when it is on. */
+async function fullProtection(): Promise<void> {
+  const f = (await api.runtime.sendMessage({ type: 'fp:status' }).catch(() => null)) as { gated: boolean; on: boolean } | null;
+  $('fullprot').hidden = !f?.gated || f.on;
+  $('fullprot-done').hidden = !f?.gated || !f.on;
+  $('fullprot-go').onclick = () => void api.runtime.sendMessage({ type: 'fp:start' });
+  if (f?.gated && !f.on) setTimeout(() => void fullProtection(), 2000);
+}
+
 void access();
 void status();
+void fullProtection();

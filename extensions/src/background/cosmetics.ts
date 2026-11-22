@@ -16,6 +16,7 @@ import { recordGenericSelectors } from './tabdata.ts';
 import { getPickerRules } from './sitefixes.ts';
 import { hostMatches } from '../shared/domain.ts';
 import type { PickerRule } from '../shared/selectors.ts';
+import { GATED, fullProtectionOn, onFullProtectionChange, userScriptsApi } from './fullprotection.ts';
 
 /**
  * Build a hiding stylesheet: one rule per selector, so a selector the browser
@@ -112,8 +113,10 @@ let runnerRegistered = false;
 async function scriptletConfig(tabId: number, frameId: number, host: string): Promise<string | null> {
   const engine = await getEngine();
   if (!engine) return null;
-  const s = engine.scriptlets(host);
-  const p = engine.procedural(host);
+  // Chrome: the lists' page fixes only with full protection on (they then run through the User Scripts API).
+  const scope = GATED && !(await fullProtectionOn()) ? 'local' : 'all';
+  const s = engine.scriptlets(host, scope);
+  const p = engine.procedural(host, scope);
   if (!s.length && !p.length) return null;
   const top = frameId === 0 ? host : await tabTopHost(tabId, host);
   const disabled = await disabledSites();
@@ -191,6 +194,14 @@ export function refreshScriptletCache(): Promise<void> {
   return refreshing;
 }
 
+/** How many of the lists' page fixes for `host` wait for full protection (Chrome, switch off), else 0. */
+export async function waitingFixes(host: string): Promise<number> {
+  if (!GATED || (await fullProtectionOn())) return 0;
+  const engine = await getEngine();
+  if (!engine) return 0;
+  return engine.scriptlets(host, 'remote').length + engine.procedural(host, 'remote').length;
+}
+
 /** Content script hello at document_start: this frame's scriptlet configuration. */
 export async function onContentScriptlets(sender: chrome.runtime.MessageSender): Promise<{ cfg: string | null }> {
   const tabId = sender.tab?.id;
@@ -207,13 +218,29 @@ function dispatchToRunner(name: string, cfg: string): void {
   window.dispatchEvent(new CustomEvent(name, { detail: cfg }));
 }
 
+/** How the runner is registered: as an extension content script, or (Chrome, full protection) a user script. */
+let runnerVia: 'scripting' | 'userScripts' = 'scripting';
+
 async function registerRunner(): Promise<void> {
+  const us = GATED && (await fullProtectionOn(0)) ? userScriptsApi() : null;
   try {
-    const existing = await B.scripting.getRegisteredContentScripts({ ids: [SCRIPTLET_SCRIPT_ID] });
-    if (!existing.length) {
-      await B.scripting.registerContentScripts([
-        { id: SCRIPTLET_SCRIPT_ID, js: ['scriptlets.js'], matches: ['http://*/*', 'https://*/*'], runAt: 'document_start', allFrames: true, world: 'MAIN', persistAcrossSessions: true } as chrome.scripting.RegisteredContentScript,
-      ]);
+    if (us) {
+      // Full protection: the runner that carries the lists' page fixes is a user script.
+      const had = await us.getScripts({ ids: [SCRIPTLET_SCRIPT_ID] });
+      if (!had.length) {
+        await us.register([{ id: SCRIPTLET_SCRIPT_ID, js: [{ file: 'scriptlets.js' }], matches: ['http://*/*', 'https://*/*'], runAt: 'document_start', allFrames: true, world: 'MAIN' }]);
+      }
+      const old = await B.scripting.getRegisteredContentScripts({ ids: [SCRIPTLET_SCRIPT_ID] });
+      if (old.length) await B.scripting.unregisterContentScripts({ ids: [SCRIPTLET_SCRIPT_ID] });
+      runnerVia = 'userScripts';
+    } else {
+      const existing = await B.scripting.getRegisteredContentScripts({ ids: [SCRIPTLET_SCRIPT_ID] });
+      if (!existing.length) {
+        await B.scripting.registerContentScripts([
+          { id: SCRIPTLET_SCRIPT_ID, js: ['scriptlets.js'], matches: ['http://*/*', 'https://*/*'], runAt: 'document_start', allFrames: true, world: 'MAIN', persistAcrossSessions: true } as chrome.scripting.RegisteredContentScript,
+        ]);
+      }
+      runnerVia = 'scripting';
     }
     runnerRegistered = true;
   } catch (err) {
@@ -222,9 +249,34 @@ async function registerRunner(): Promise<void> {
   }
 }
 
+/** Code that hands `cfg` to the runner, for the User Scripts API (which takes code, not functions). */
+function dispatchCode(cfg: string): string {
+  return `window.dispatchEvent(new CustomEvent(${JSON.stringify(SCRIPTLET_EVENT)}, { detail: ${JSON.stringify(cfg)} }));`;
+}
+
 /** On every committed frame: run scriptlets / procedural filters as early as possible. */
+/**
+ * Chrome: the cached configurations must match the switch (with it off they may hold no list page fixes).
+ * The scope they were built for is stored; on a mismatch (e.g. the switch was turned off while the
+ * browser was closed) the cache is cleared at once, before the runner is registered, and rebuilt by the
+ * next visits.
+ */
+async function syncCacheScope(): Promise<void> {
+  if (!GATED) return;
+  const scope = (await fullProtectionOn(0)) ? 'all' : 'local';
+  const { slScope } = (await B.storage.local.get('slScope')) as { slScope?: string };
+  if (slScope === scope) return;
+  await clearScriptletCache();
+  await B.storage.local.set({ slScope: scope });
+}
+
 export function registerScriptletInjection(): void {
-  const ready = registerRunner();
+  let ready = syncCacheScope().catch(() => undefined).then(registerRunner);
+  // Chrome's switch turned on or off: move the runner and rebuild the cached configurations.
+  onFullProtectionChange(async () => {
+    ready = syncCacheScope().catch(() => undefined).then(registerRunner);
+    await ready;
+  });
   onInvalidate(() => void refreshScriptletCache());
   onDisabledSitesChange(refreshScriptletCache);
   onOverlayChange(refreshScriptletCache);
@@ -239,7 +291,16 @@ export function registerScriptletInjection(): void {
       if (!cfg) return;
       await ready;
       try {
-        if (runnerRegistered) {
+        const us = runnerVia === 'userScripts' ? userScriptsApi() : null;
+        if (us?.execute) {
+          // Full protection on Chrome: everything that carries the lists' page fixes goes through the User Scripts API.
+          await us.execute({
+            target: { tabId: d.tabId, frameIds: [d.frameId] },
+            world: 'MAIN',
+            injectImmediately: true,
+            js: [{ code: runnerRegistered ? dispatchCode(cfg) : `(${runtime.toString()})(${cfg});` }],
+          });
+        } else if (runnerRegistered) {
           await B.scripting.executeScript({
             target: { tabId: d.tabId, frameIds: [d.frameId] },
             world: 'MAIN',
