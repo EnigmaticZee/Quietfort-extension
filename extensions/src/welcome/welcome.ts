@@ -19,8 +19,15 @@ async function access(): Promise<void> {
   }
   $('access').hidden = ok;
   $('grant').onclick = async () => {
-    if (await api.permissions.request({ origins: ['<all_urls>'] })) $('access').hidden = true;
+    // Safari ignores this request (nothing appears), so it also shows where Safari's own setting is.
+    const ok = await api.permissions.request({ origins: ['<all_urls>'] }).catch(() => false);
+    if (ok) $('access').hidden = true;
+    else $('grant-help').hidden = false;
   };
+  // Safari: show the steps straight away; its access setting lives in Safari, not behind the button.
+  if (api.runtime.getURL('').startsWith('safari-web-extension:')) $('grant-help').hidden = false;
+  // The person may grant access in Safari's own UI while this page is open.
+  if (!ok) setTimeout(() => void access(), 2000);
 }
 
 async function status(): Promise<void> {

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>ADBAppGroup</key>
-	<string>$(TeamIdentifierPrefix)app.adblocker.companion</string>
+	<string>$(TeamIdentifierPrefix)io.github.enigmaticzee.quietfort</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

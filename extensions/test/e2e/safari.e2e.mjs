@@ -43,7 +43,7 @@ import { DEEP_INDEX, FULL_LIST_HOSTS } from './server.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const PORT = Number(process.env.SAFARI_E2E_PORT || 80);
 const ORIGIN = (host) => `http://${host}${PORT === 80 ? '' : `:${PORT}`}`;
-const APP = join(ROOT, 'safari-app/build/Build/Products/Debug/AdBlocker Companion.app');
+const APP = join(ROOT, 'safari-app/build/Build/Products/Debug/Quietfort for Safari.app');
 const APPEX_RES = join(APP, 'Contents/PlugIns/AdBlocker Companion Extension.appex/Contents/Resources');
 const E2E_DIST = join(ROOT, 'dist/safari-e2e');
 const args = new Set(process.argv.slice(2));
@@ -66,7 +66,7 @@ The Safari extension is not active in Safari yet. One-time setup, by hand in Saf
   1. Safari > Settings... > Extensions: tick "Quietfort for Safari" and the three
      "Quietfort Rules 1/2/3" items (the content blockers that carry the filter lists).
      (Not listed? Quit Safari, run: open "${APP}" , reopen Safari.)
-  2. Give it access to every website: Safari > Settings... > Websites > "AdBlocker Companion"
+  2. Give it access to every website: Safari > Settings... > Websites > "Quietfort for Safari"
      (left column, under Extensions) > "When visiting other websites: Allow".
      (While it lacks access, its toolbar icon shows an orange badge and nothing runs.)
   3. Optional (not needed for the test): Developer tab > "Allow remote automation", and once in
@@ -80,7 +80,7 @@ tick "AdBlocker Rules 1", "AdBlocker Rules 2" and "AdBlocker Rules 3", then run 
 `;
 
 const OTHER_BLOCKERS = `
-Another content blocker is filtering the test pages (with AdBlocker Companion not involved,
+Another content blocker is filtering the test pages (with Quietfort for Safari not involved,
 the fixture ad script was still blocked). Turn the others off in Safari > Settings... >
 Extensions while the test runs (e.g. Adblock Plus, ABP Control Panel, AdGuard; also the
 AdGuard for Mac app's Safari filtering), then run the test again.
@@ -122,7 +122,7 @@ async function build() {
     : `--e2e-lists=${ORIGIN('lists.localhost')}/fixture.txt,easylist-cookie=${ORIGIN('lists.localhost')}/cookie.txt`;
   execFileSync('node', ['scripts/build.mjs', 'safari', lists], { cwd: ROOT, stdio: 'inherit' });
   // Native code (companion app, extension handler, content blockers) newer than the app: rebuild too.
-  const appBin = join(APP, 'Contents/MacOS/AdBlocker Companion');
+  const appBin = join(APP, 'Contents/MacOS/Quietfort for Safari');
   const nativeDir = join(ROOT, 'safari-app/AdBlocker Companion');
   const nativeNewer = !existsSync(appBin) || filesUnder(nativeDir)
     .some((f) => /\.(swift|plist|entitlements|xcproj)$/.test(f) && statSync(join(nativeDir, f)).mtimeMs > statSync(appBin).mtimeMs);
@@ -188,7 +188,7 @@ if (!args.has('--no-build')) {
   rebuilt = await build();
   let running = false;
   try {
-    running = !!execFileSync('pgrep', ['-f', 'AdBlocker Companion.app/Contents/MacOS'], { encoding: 'utf8' }).trim();
+    running = !!execFileSync('pgrep', ['-f', 'Quietfort for Safari.app/Contents/MacOS'], { encoding: 'utf8' }).trim();
   } catch {
     /* not running */
   }
@@ -608,7 +608,7 @@ try {
       }
       if (home) await wdS('POST', '/window', { handle: home }).catch(() => null);
     };
-    const popupCase = async (label, sel, host, path, expectBlocked) => {
+    const popupCase = async (label, sel, host, path, expectBlocked, maxServed = 0) => {
       await go(pub);
       await sleep(800);
       const before = (await handles()).length;
@@ -620,13 +620,26 @@ try {
       await sleep(2500);
       const opened = (await handles()).length - before;
       const served = log.slice(from).filter((l) => l.host === host && l.path === path).length;
-      h.check(label, expectBlocked ? opened === 0 && served === 0 : opened >= 1 && served >= 1, { opened, served });
+      h.check(label, expectBlocked ? opened === 0 && served <= maxServed : opened >= 1 && served >= 1, { opened, served });
       await closeOthers();
     };
     await popupCase('$popup: window.open to an ad network never opens (never contacted)', '#open-bad', 'popads.localhost', '/landing', true);
     await popupCase('$popup: a normal popup still opens', '#open-good', 'goodsite.localhost', '/landing', false);
     await popupCase('$popup exception (@@...$popup) respected', '#open-allowed', 'popads.localhost', '/allowed/x', false);
-    await popupCase('$popup: target=_blank link to an ad network blocked', '#link-bad', 'popads.localhost', '/viaLink', true);
+    // Safari offers no hook before a link's new tab starts loading: the tab is closed, after at most one request.
+    await popupCase('$popup: target=_blank link to an ad network: its tab is closed (Safari: at most one request)', '#link-bad', 'popads.localhost', '/viaLink', true, 1);
+    {
+      // A tab the person opens themselves on the same address is not a pop-up.
+      const before = (await handles()).length;
+      const w = await wdS('POST', '/window/new', { type: 'tab' }).catch(() => null);
+      if (w?.handle) {
+        await wdS('POST', '/window', { handle: w.handle }).catch(() => null);
+        await wdS('POST', '/url', { url: 'http://popads.localhost/viaLink' }).catch(() => null);
+        await sleep(2500);
+        h.check('$popup: a tab the person opens themselves on an ad address stays open', (await handles()).length === before + 1, (await handles()).length - before);
+        await closeOthers();
+      } else h.info('$popup: own tab check', 'not run: WebDriver could not open a tab');
+    }
     await popupCase('$popup,third-party popunder blocked', '#open-3p', 'popunder.localhost', '/x', true);
   } else {
     h.info('popup blocking ($popup)', 'not run: needs WebDriver (a real click); the page agent cannot produce a user gesture in a normal Safari window');

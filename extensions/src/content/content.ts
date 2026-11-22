@@ -31,6 +31,20 @@ declare const __E2E__: boolean;
   }
   api.runtime.sendMessage({ type: 'cs:scriptlets' }).then((r: { cfg?: unknown } | undefined) => toRunner(r?.cfg), () => undefined);
 
+  // Safari: tabs.onCreated never names the opener, so pop-up rules could not recognise a tab opened by
+  // clicking a link. Say which page a new-tab link was clicked on (trusted clicks only).
+  if (api.runtime.getURL('').startsWith('safari-web-extension:')) {
+    document.addEventListener('click', (ev) => {
+      if (!ev.isTrusted) return;
+      const a = (ev.target instanceof Element ? ev.target.closest('a[href]') : null) as HTMLAnchorElement | null;
+      if (!a || !/^https?:/i.test(a.href)) return;
+      const base = document.querySelector('base[target]')?.getAttribute('target') ?? '';
+      const target = (a.getAttribute('target') || base).toLowerCase();
+      const newTab = (target !== '' && target !== '_self' && target !== '_top' && target !== '_parent') || ev.metaKey;
+      if (newTab) api.runtime.sendMessage({ type: 'cs:linkOpen', url: a.href }).catch(() => undefined);
+    }, true);
+  }
+
   // Right-click "Hide this element": remember what was right-clicked (top frame) so the
   // picker can start on it. Stays in this extension's isolated world.
   if (window === window.top) {

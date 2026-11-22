@@ -8,7 +8,7 @@ import Foundation
 
 enum ContentBlockerStore {
     static let count = 3
-    static func identifier(_ index: Int) -> String { "app.adblocker.companion.Blocker\(index + 1)" }
+    static func identifier(_ index: Int) -> String { "io.github.enigmaticzee.quietfort.Blocker\(index + 1)" }
 
     /// The app group (Info.plist `ADBAppGroup`, set from the team prefix at build time).
     static var directory: URL? {

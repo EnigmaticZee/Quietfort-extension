@@ -78,7 +78,7 @@ cd "safari-app/AdBlocker Companion"
 xcodebuild -project "AdBlocker Companion.xcodeproj" -scheme "AdBlocker Companion" \
   -configuration Debug -derivedDataPath ../build DEVELOPMENT_TEAM=<your team id> \
   CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates build
-open "../build/Build/Products/Debug/AdBlocker Companion.app"
+open "../build/Build/Products/Debug/Quietfort for Safari.app"
 ```
 
 Then turn on Quietfort and its three Rules extensions in **Safari → Settings → Extensions**.

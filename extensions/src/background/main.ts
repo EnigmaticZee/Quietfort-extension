@@ -15,7 +15,7 @@ import type { ListSource, ListStatus, StoredList } from './state.ts';
 import { applyAllowlist, applyDnr, applyPrivacy, isMainRuleId, MIN_LEARNED_CAP } from './dnr-apply.ts';
 import { contentBlockerStatus, ensureContentBlockers, pushContentBlockersQueued, scheduleContentBlockers } from './safari-cb.ts';
 import type { DnrStatus } from './dnr-apply.ts';
-import { registerPopupBlocker, recentlyBlocked } from './popup-blocker.ts';
+import { onLinkOpen, registerPopupBlocker, recentlyBlocked } from './popup-blocker.ts';
 import { registerNavigationRules } from './navigation.ts';
 import { addBlocked, getCount, removeTab, resetTab } from './counts.ts';
 import { onContentInit, onContentScriptlets, onContentTokens, registerScriptletInjection, waitingFixes } from './cosmetics.ts';
@@ -695,6 +695,10 @@ B.runtime.onMessage.addListener((raw: unknown, sender, sendResponse) => {
       break;
     case 'cs:init':
       p = onContentInit(sender);
+      break;
+    case 'cs:linkOpen':
+      onLinkOpen(sender, msg.url);
+      p = Promise.resolve({ ok: true });
       break;
     case 'cs:scriptlets':
       p = onContentScriptlets(sender);

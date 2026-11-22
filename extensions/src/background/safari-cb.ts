@@ -18,9 +18,9 @@ import type { CbBuildResult, CbRule } from '../shared/safari-cb.ts';
 import { disabledSites, getEngine, networkRuleTier, onDisabledSitesChange, onOverlayChange } from './state.ts';
 import { overlayDnrRules } from './sitefixes.ts';
 
-/** Content-blocker extensions in the companion app (app.adblocker.companion.Blocker1...N). */
+/** Content-blocker extensions in the companion app (io.github.enigmaticzee.quietfort.Blocker1...N). */
 export const CB_COUNT = 3;
-const APP_ID = 'app.adblocker.companion';
+const APP_ID = 'io.github.enigmaticzee.quietfort';
 /** Base64 characters per native message. */
 const PART_CHARS = 4 * 1024 * 1024;
 const DEBOUNCE_MS = 3000;

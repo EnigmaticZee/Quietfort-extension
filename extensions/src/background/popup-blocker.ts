@@ -50,6 +50,42 @@ async function topUrl(tabId: number): Promise<string | null> {
   }
 }
 
+/** Safari: the last new-tab link clicked, and where (content.ts 'cs:linkOpen'). */
+let lastLink: { url: string; openerTabId: number; openerUrl: string | null; at: number } | null = null;
+/** Safari: tabs created moments ago without a named opener; the click message may arrive after them. */
+const orphans = new Map<number, { createdAt: number; url: string | null }>();
+const LINK_MS = 2000;
+
+/**
+ * The new tab must really go to the clicked link's host. A tab whose address is not known yet is left
+ * alone until it navigates, so a tab the person opens themselves (⌘T) is never taken for the link's.
+ */
+function claims(linkUrl: string, tabUrl: string | null): boolean {
+  return !!tabUrl && /^https?:/i.test(tabUrl) && hostOf(linkUrl) === hostOf(tabUrl);
+}
+
+/** Content script: the person clicked a link that opens a new tab (Safari only). */
+export function onLinkOpen(sender: chrome.runtime.MessageSender, url: unknown): void {
+  const tabId = sender.tab?.id;
+  if (tabId === undefined || typeof url !== 'string' || !/^https?:/i.test(url)) return;
+  lastLink = { url, openerTabId: tabId, openerUrl: sender.url ?? null, at: Date.now() };
+  for (const [id, o] of orphans) {
+    if (Date.now() - o.createdAt <= LINK_MS && id !== tabId && claims(url, o.url)) {
+      orphans.delete(id);
+      adopt(id, o.url as string);
+      break;
+    }
+  }
+}
+
+function adopt(tabId: number, url: string): void {
+  const l = lastLink;
+  if (!l) return;
+  lastLink = null; // one link, one tab
+  candidates.set(tabId, { openerTabId: l.openerTabId, openerUrl: l.openerUrl, createdAt: Date.now() });
+  void evaluate(tabId, url);
+}
+
 async function evaluate(tabId: number, url: string | undefined): Promise<void> {
   const c = candidates.get(tabId);
   if (!c) return;
@@ -92,8 +128,18 @@ export function registerPopupBlocker(): void {
   } else {
     // Fallback (no onCreatedNavigationTarget): tabs that have an opener.
     B.tabs.onCreated.addListener((tab) => {
-      if (tab.id === undefined || tab.openerTabId === undefined) return;
+      if (tab.id === undefined) return;
       const id = tab.id;
+      if (tab.openerTabId === undefined) {
+        // Safari never names the opener: use the new-tab link the person clicked within LINK_MS, if any.
+        const url = tab.pendingUrl || tab.url || null;
+        if (lastLink && Date.now() - lastLink.at <= LINK_MS && lastLink.openerTabId !== id && claims(lastLink.url, url)) adopt(id, url as string);
+        else {
+          orphans.set(id, { createdAt: Date.now(), url });
+          setTimeout(() => orphans.delete(id), LINK_MS + 500);
+        }
+        return;
+      }
       candidates.set(id, { openerTabId: tab.openerTabId, openerUrl: null, createdAt: Date.now() });
       void (async () => {
         const c = candidates.get(id);
@@ -109,7 +155,19 @@ export function registerPopupBlocker(): void {
     if (d.frameId === 0 && candidates.has(d.tabId)) void evaluate(d.tabId, d.url);
   });
   B.tabs.onUpdated.addListener((tabId, info) => {
+    if (info.url && orphans.has(tabId)) {
+      const o = orphans.get(tabId)!;
+      o.url = info.url;
+      if (lastLink && Date.now() - lastLink.at <= LINK_MS && lastLink.openerTabId !== tabId && claims(lastLink.url, info.url)) {
+        orphans.delete(tabId);
+        adopt(tabId, info.url);
+        return;
+      }
+    }
     if (info.url && candidates.has(tabId)) void evaluate(tabId, info.url);
   });
-  B.tabs.onRemoved.addListener((tabId) => candidates.delete(tabId));
+  B.tabs.onRemoved.addListener((tabId) => {
+    candidates.delete(tabId);
+    orphans.delete(tabId);
+  });
 }

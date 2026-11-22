@@ -82,9 +82,11 @@ async function render(): Promise<void> {
   if (cb && cb.on < cb.total) $('cb-off-text').textContent = `${cb.total - cb.on} of ${cb.total} Quietfort Rules sets are off in Safari, so most filter-list rules are not applied.`;
   else if (cb?.error) $('cb-off-text').textContent = 'Safari could not load some of the blocking rules. They will be retried.';
   $('grant').onclick = async () => {
-    // Must run in the click handler (user gesture).
-    if (await api.permissions.request({ origins: ['<all_urls>'] })) window.location.reload();
+    // Must run in the click handler (user gesture). Safari ignores the request: show its own setting instead.
+    if (await api.permissions.request({ origins: ['<all_urls>'] }).catch(() => false)) window.location.reload();
+    else $('grant-help').hidden = false;
   };
+  if (s.platform === 'safari') $('grant-help').hidden = false;
   const toggle = $('toggle') as HTMLInputElement;
   toggle.checked = s.enabled;
   toggle.disabled = !s.host || !!s.pausedUntil;

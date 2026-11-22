@@ -11,7 +11,7 @@ import SafariServices
 import WebKit
 import os
 
-private let log = Logger(subsystem: "app.adblocker.companion", category: "content-blockers")
+private let log = Logger(subsystem: "io.github.enigmaticzee.quietfort", category: "content-blockers")
 
 final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
     func beginRequest(with context: NSExtensionContext) {

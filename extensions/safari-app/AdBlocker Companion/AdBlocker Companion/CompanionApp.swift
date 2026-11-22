@@ -8,8 +8,8 @@
 import SafariServices
 import SwiftUI
 
-let extensionBundleIdentifier = "app.adblocker.companion.Extension"
-let contentBlockerIdentifiers = (1...3).map { "app.adblocker.companion.Blocker\($0)" }
+let extensionBundleIdentifier = "io.github.enigmaticzee.quietfort.Extension"
+let contentBlockerIdentifiers = (1...3).map { "io.github.enigmaticzee.quietfort.Blocker\($0)" }
 
 @main
 struct CompanionApp: App {
