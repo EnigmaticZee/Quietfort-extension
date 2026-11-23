@@ -18,6 +18,7 @@ import type { DnrStatus } from './dnr-apply.ts';
 import { onLinkOpen, registerPopupBlocker, recentlyBlocked } from './popup-blocker.ts';
 import { registerNavigationRules } from './navigation.ts';
 import { addBlocked, getCount, removeTab, resetTab } from './counts.ts';
+import { category } from '../shared/category.ts';
 import { onContentInit, onContentScriptlets, onContentTokens, registerScriptletInjection, waitingFixes } from './cosmetics.ts';
 import { GATED, fullProtectionOn, startFullProtection } from './fullprotection.ts';
 import { registerFirefoxWebRequest } from './webrequest-firefox.ts';
@@ -153,7 +154,7 @@ if (PLATFORM === 'firefox') {
         if (webRequestErrors.length > 40) webRequestErrors.shift();
       }
       if (d.error === 'net::ERR_BLOCKED_BY_CLIENT' && d.tabId >= 0) {
-        addBlocked(d.tabId, 1);
+        addBlocked(d.tabId, 1, 'request', category(d.url, d.type));
         recordBlocked(d.tabId, { url: d.url, type: d.type, src: initiatorHost(d), at: d.timeStamp });
       }
     },
@@ -162,7 +163,7 @@ if (PLATFORM === 'firefox') {
   B.webRequest.onBeforeRedirect.addListener(
     (d) => {
       if (d.redirectUrl.startsWith(own) && d.tabId >= 0) {
-        addBlocked(d.tabId, 1);
+        addBlocked(d.tabId, 1, 'request', category(d.url, d.type));
         recordBlocked(d.tabId, { url: d.url, type: d.type, src: initiatorHost(d), at: d.timeStamp });
       }
     },
@@ -271,6 +272,7 @@ async function siteState(tabId: number) {
     consent: consentStatus(tabId),
     ai: aiTabStatus(tabId),
     blocked: counts.requests,
+    kinds: counts.kinds,
     popupsBlocked: counts.popups,
     lists: listStatus,
     // Safari: which of the companion app's content blockers are on (the popup asks to turn the rest on).

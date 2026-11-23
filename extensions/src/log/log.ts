@@ -8,6 +8,8 @@
 // page is not offered there.
 
 import { applyTheme } from '../shared/theme.ts';
+import { CATEGORY_LABEL, category } from '../shared/category.ts';
+import type { Category } from '../shared/category.ts';
 
 const api: typeof chrome = ((globalThis as unknown as { browser?: typeof chrome }).browser ?? chrome);
 const $ = (id: string) => document.getElementById(id)!;
@@ -23,14 +25,9 @@ interface View {
 let tabId = Number(new URLSearchParams(location.search).get('tabId')) || -1;
 let lastKey = '';
 
-const TRACKER = /(analytics|metrics|telemetry|track|pixel|beacon|collect|stats|scorecard|hotjar|segment|mixpanel|amplitude|fullstory|clarity|quantserve|chartbeat|newrelic|nr-data|sentry|bugsnag|fingerprint)/i;
-const AD = /(ads?[.\/_-]|adserv|adsystem|doubleclick|googlesyndication|adnxs|criteo|taboola|outbrain|pubmatic|rubicon|openx|amazon-adsystem|prebid|banner|sponsor|teads|moatads|adform|smartadserver)/i;
-
-function category(url: string, type: string): ['ads' | 'trackers' | 'danger' | 'other', string] {
-  if (type === 'main_frame') return ['danger', 'Dangerous site'];
-  if (AD.test(url)) return ['ads', 'Ad'];
-  if (TRACKER.test(url) || type === 'ping' || type === 'beacon') return ['trackers', 'Tracker'];
-  return ['other', 'Blocked'];
+function cat(url: string, type: string, rule?: string): [Category, string] {
+  const c = category(url, type, rule);
+  return [c, CATEGORY_LABEL[c]];
 }
 
 const TYPE: Record<string, string> = {
@@ -70,10 +67,10 @@ function render(v: View): void {
   rows.textContent = '';
   const items = [...v.blocked].reverse().filter((b) => !q || b.url.toLowerCase().includes(q) || b.type.includes(q));
   const per: Record<string, number> = { ads: 0, trackers: 0, danger: 0, other: 0 };
-  for (const b of v.blocked) per[category(b.url, b.type)[0]]!++;
+  for (const b of v.blocked) per[cat(b.url, b.type, b.rule)[0]]!++;
   for (const b of items) {
     const tr = document.createElement('tr');
-    const [cls, label] = category(b.url, b.type);
+    const [cls, label] = cat(b.url, b.type, b.rule);
     const when = document.createElement('td');
     when.className = 'when';
     when.textContent = new Date(b.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });

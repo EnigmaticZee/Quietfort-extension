@@ -18,6 +18,7 @@ import type { HostSet } from '../shared/hostset.ts';
 import { warningUrl } from '../shared/protection.ts';
 import { rewriteRequestHeaders } from '../shared/privacy.ts';
 import { addBlocked } from './counts.ts';
+import { category } from '../shared/category.ts';
 import { recordBlocked } from './tabdata.ts';
 
 interface FxDetails {
@@ -64,7 +65,7 @@ function protect(p: HostSet, d: FxDetails): chrome.webRequest.BlockingResponse |
   const host = httpHost(d.url);
   const list = p.lookup(host);
   if (!list || isAllowedInTab(d.tabId, host!)) return null;
-  addBlocked(d.tabId, 1);
+  addBlocked(d.tabId, 1, 'request', 'danger');
   recordBlocked(d.tabId, { url: d.url, type: d.type, src: d.type === 'main_frame' ? null : httpHost(d.documentUrl ?? d.originUrl), rule: `protection:${list}`, at: d.timeStamp ?? Date.now() });
   if (d.type === 'main_frame') return { redirectUrl: warningUrl(warningPageUrl(), list, d.url) };
   return { cancel: true };
@@ -80,7 +81,7 @@ function decide(e: Engine | null, p: HostSet | null, d: FxDetails, disabled: str
   const i = info(d);
   const v = e.check(i);
   if (v.action === 'block') {
-    addBlocked(d.tabId, 1);
+    addBlocked(d.tabId, 1, 'request', category(d.url, d.type, v.rule));
     recordBlocked(d.tabId, { url: d.url, type: d.type, src: i.sourceHost, rule: v.rule, at: d.timeStamp ?? Date.now() });
     const path = v.redirect ? resourcePath(v.redirect) : null;
     // Never redirect a top-level navigation to a stub resource.

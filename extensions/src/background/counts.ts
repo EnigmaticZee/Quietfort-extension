@@ -6,11 +6,18 @@
 // mirrored to storage.session so they survive service-worker restarts.
 
 import { B } from './api.ts';
+import type { Category } from '../shared/category.ts';
+
+export type Kinds = Record<Category, number>;
 
 interface TabCount {
   requests: number;
   popups: number;
+  /** Requests split by rough kind (shared/category.ts). */
+  kinds?: Kinds;
 }
+
+const noKinds = (): Kinds => ({ ads: 0, trackers: 0, danger: 0, other: 0 });
 
 let counts: Record<string, TabCount> = {};
 let loaded: Promise<void> | null = null;
@@ -45,12 +52,15 @@ function badge(tabId: number): void {
   B.action.setBadgeText({ tabId, text: n ? String(n > 999 ? '999+' : n) : null } as unknown as chrome.action.BadgeTextDetails).catch(() => undefined);
 }
 
-export function addBlocked(tabId: number, n = 1, kind: 'request' | 'popup' = 'request'): void {
+export function addBlocked(tabId: number, n = 1, kind: 'request' | 'popup' = 'request', cat: Category = 'other'): void {
   if (tabId < 0) return;
   void load().then(() => {
-    const c = (counts[tabId] ??= { requests: 0, popups: 0 });
+    const c = (counts[tabId] ??= { requests: 0, popups: 0, kinds: noKinds() });
     if (kind === 'popup') c.popups += n;
-    else c.requests += n;
+    else {
+      c.requests += n;
+      (c.kinds ??= noKinds())[cat] += n;
+    }
     badge(tabId);
     scheduleSave();
   });
@@ -59,7 +69,7 @@ export function addBlocked(tabId: number, n = 1, kind: 'request' | 'popup' = 're
 export function resetTab(tabId: number): void {
   void load().then(() => {
     // Popups closed on behalf of this tab are kept until the next navigation too.
-    counts[tabId] = { requests: 0, popups: 0 };
+    counts[tabId] = { requests: 0, popups: 0, kinds: noKinds() };
     badge(tabId);
     scheduleSave();
   });
@@ -72,7 +82,8 @@ export function removeTab(tabId: number): void {
   });
 }
 
-export async function getCount(tabId: number): Promise<TabCount> {
+export async function getCount(tabId: number): Promise<Required<TabCount>> {
   await load();
-  return counts[tabId] ?? { requests: 0, popups: 0 };
+  const c = counts[tabId];
+  return { requests: c?.requests ?? 0, popups: c?.popups ?? 0, kinds: c?.kinds ?? noKinds() };
 }

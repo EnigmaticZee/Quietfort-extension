@@ -11,77 +11,82 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <header class="card hero">
+  <div class="top">
     <span class="badge" aria-hidden="true">
       <svg viewBox="26 24 48 56"><path d="M28 26h8v5h6v-5h16v5h6v-5h8v23c0 15-9.5 24.5-22 29.5C37.5 73.5 28 64 28 49z" fill="#fff"/><rect x="38" y="47" width="24" height="7" rx="3.5" fill="#0B3C45"/></svg>
     </span>
-    <div class="who">
-      <div id="host" class="host">…</div>
-      <label for="toggle" id="toggle-label" class="sub">Checking this site…</label>
-    </div>
-    <label class="sw" title="Blocking on this site">
-      <input type="checkbox" id="toggle" role="switch" aria-labelledby="toggle-label" disabled>
-      <span class="track"></span>
-    </label>
-  </header>
-
-  <section id="paused" class="card warn note" hidden>
-    <p><strong>Blocking is paused everywhere</strong><br><span id="paused-until" class="muted"></span></p>
-    <button id="resume" type="button" class="primary">Turn blocking back on</button>
-  </section>
+    <span class="brand">Quietfort</span>
+    <a id="settings" class="ib" href="options.html" target="_blank" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </a>
+  </div>
 
   <section id="access" class="card note" hidden>
     <p>Blocking needs access to websites.</p>
     <button id="grant" type="button" class="primary">Allow on all websites</button>
     <p id="grant-help" class="muted" hidden>In Safari: click the Quietfort icon in the toolbar and choose “Always Allow on Every Website”. Or Safari › Settings › Websites › Quietfort › “When visiting other websites”: Allow.</p>
   </section>
-  <section id="fullprot" class="card note" hidden>
-    <p><strong>Extra fixes for this site are waiting.</strong><br><span class="muted">They need one switch in Chrome, for example for YouTube ads and sites that block ad blockers.</span></p>
-    <button id="fullprot-go" type="button" class="primary">Turn on full protection</button>
+  <section id="fullprot" class="card bn" hidden title="Some fixes, for example for YouTube ads and sites that block ad blockers, need one switch in Chrome.">
+    <span class="bi" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <p class="bt"><strong>Block more on this site</strong><span class="muted">Needs one switch in Chrome</span></p>
+    <button id="fullprot-go" type="button" class="primary">Turn on</button>
   </section>
   <section id="cb-off" class="card note" hidden>
     <p id="cb-off-text">Some of the blocking rules are off in Safari.</p>
     <p class="muted">Safari → Settings → Extensions: tick every “Quietfort Rules” item.</p>
   </section>
 
-  <section class="counts">
-    <div class="card"><strong id="blocked">0</strong><span id="blocked-label">blocked on this page</span></div>
-    <div class="card"><strong id="popups">0</strong><span>pop-ups closed</span></div>
-  </section>
-
-  <section class="card group">
-    <label class="row cookies" for="cookie-toggle">
-      <span class="tile cookie" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 3 3 0 0 1-3-3 3 3 0 0 1-3-3 3 3 0 0 1-3-3z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 11h.01M12 16h.01M15.5 13h.01" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
-      </span>
-      <span class="grow">Reject cookie banners</span>
-      <span class="sw"><input type="checkbox" id="cookie-toggle" role="switch" checked><span class="track"></span></span>
-    </label>
-    <p id="cookie-status" class="rownote" hidden></p>
+  <section id="summary" class="card summary">
+    <div class="site">
+      <span id="fav" class="fav" aria-hidden="true">·</span>
+      <div class="who">
+        <div id="host" class="host">…</div>
+        <label for="toggle" id="toggle-label" class="state">Checking this site…</label>
+      </div>
+      <label class="sw" title="Blocking on this site">
+        <input type="checkbox" id="toggle" role="switch" aria-labelledby="toggle-label" disabled>
+        <span class="track"></span>
+      </label>
+    </div>
+    <div class="split">
+      <div class="ring">
+        <svg id="ring" viewBox="0 0 104 104" aria-hidden="true"></svg>
+        <div class="mid"><strong id="blocked">0</strong><span id="blocked-label">blocked</span></div>
+      </div>
+      <ul class="legend">
+        <li data-kind="ads"><i></i>Ads<em id="n-ads">0</em></li>
+        <li data-kind="trackers"><i></i>Trackers<em id="n-trackers">0</em></li>
+        <li data-kind="danger" id="row-danger" hidden><i></i>Dangerous<em id="n-danger">0</em></li>
+        <li data-kind="other"><i></i>Other<em id="n-other">0</em></li>
+        <li data-kind="popups"><i></i>Pop-ups closed<em id="popups">0</em></li>
+      </ul>
+    </div>
+    <p id="safari-counts" class="muted" hidden>Safari doesn’t tell extensions what it blocked, so there are no counts here.</p>
   </section>
 
   <section id="suggest" class="card warn" hidden>
-    <p>This page may be broken by blocking. Try “Site broken?”.</p>
+    <p>This page may be broken by blocking. Try “Fix site”.</p>
   </section>
 
   <section class="fix">
-    <div class="buttons three">
-      <button id="pick" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        Hide an element
-      </button>
-      <button id="zap" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-        Zap
-      </button>
-      <button id="fix" type="button">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5a4 4 0 0 0 4.9 4.9L11 19a2.1 2.1 0 0 1-3-3l8.6-8.4a4 4 0 0 0-2.1-2.1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
-        Site broken?
-      </button>
+    <div class="rounds">
+      <button id="pick" type="button"><span class="rb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>Hide</button>
+      <button id="zap" type="button"><span class="rb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Zap</button>
+      <button id="fix" type="button"><span class="rb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5a4 4 0 0 0 4.9 4.9L11 19a2.1 2.1 0 0 1-3-3l8.6-8.4a4 4 0 0 0-2.1-2.1z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Fix site</button>
+      <button id="pause-open" type="button"><span class="rb amber"><svg id="pause-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg><svg id="play-icon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10-6.5a1 1 0 0 0 0-1.7l-10-6.5A1 1 0 0 0 8 5.5z" fill="currentColor"/></svg></span><span id="pause-label">Pause</span></button>
     </div>
+    <section id="pause-menu" class="card pause" hidden>
+      <p class="muted">Pause blocking on every site</p>
+      <div class="buttons three">
+        <button type="button" data-minutes="60">1 hour</button>
+        <button type="button" data-minutes="tomorrow">Until tomorrow</button>
+        <button type="button" data-minutes="-1">Until I resume</button>
+      </div>
+    </section>
     <form id="describe-form" class="describe" autocomplete="off">
+      <svg class="spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9z" fill="currentColor"/></svg>
       <input id="describe-text" type="text" maxlength="200" placeholder="Describe something to hide" aria-label="Describe something to hide">
-      <button id="describe-go" type="submit">Find</button>
+      <button id="describe-go" type="submit" aria-label="Find" title="Find"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </form>
     <p id="describe-status" class="muted" hidden></p>
     <div id="fix-progress" class="card" hidden>
@@ -96,37 +101,38 @@
     <p id="fix-result" class="card" hidden></p>
   </section>
 
+  <section class="card group">
+    <label class="row cookies" for="cookie-toggle">
+      <span class="tile cookie" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 3 3 0 0 1-3-3 3 3 0 0 1-3-3 3 3 0 0 1-3-3z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 11h.01M12 16h.01M15.5 13h.01" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+      </span>
+      <span class="grow">Reject cookie banners</span>
+      <span class="sw"><input type="checkbox" id="cookie-toggle" role="switch" checked><span class="track"></span></span>
+    </label>
+    <p id="cookie-status" class="rownote" hidden></p>
+  </section>
+
   <section id="fixes" class="card fixes" hidden>
     <h2>Fixes on this site</h2>
     <ul id="fix-list"></ul>
     <a id="manage" href="options.html" target="_blank">Manage all fixes</a>
   </section>
 
-  <section class="links">
-    <button id="log-open" type="button" class="link">What was blocked</button>
-    <button id="pause-open" type="button" class="link">Pause everywhere</button>
+  <section class="acts" id="acts">
+    <button id="log-open" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>What was blocked</button>
+    <button id="report" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>Report a broken site</button>
   </section>
-  <section id="pause-menu" class="card pause" hidden>
-    <p class="muted">Pause blocking on every site</p>
-    <div class="buttons three">
-      <button type="button" data-minutes="60">1 hour</button>
-      <button type="button" data-minutes="tomorrow">Until tomorrow</button>
-      <button type="button" data-minutes="-1">Until I resume</button>
-    </div>
-  </section>
-
   <section class="report">
-    <button id="report" type="button" class="link">Report a broken site</button>
-    <div id="report-form" hidden>
+    <div id="report-form" class="card" hidden>
       <textarea id="report-note" rows="3" placeholder="What is broken? (optional)"></textarea>
-      <button id="report-send" type="button">Save report</button>
+      <button id="report-send" type="button" class="primary">Save report</button>
     </div>
     <p id="report-done" hidden></p>
   </section>
 
   <footer>
-    <div id="status"></div>
-    <div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>Counts stay in this browser. Nothing is sent anywhere.</div>
+    <div class="meta"><span id="status"></span></div>
+    <div class="lock"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>Nothing leaves this browser</div>
   </footer>
   <script src="popup.js"></script>
 </body>

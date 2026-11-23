@@ -215,8 +215,11 @@ try {
     host: document.getElementById('host').textContent, blocked: Number(document.getElementById('blocked').textContent),
     popups: Number(document.getElementById('popups').textContent), toggle: document.getElementById('toggle').checked,
     status: document.getElementById('status').textContent,
+    kinds: ['ads', 'trackers', 'danger', 'other'].map((k) => Number(document.getElementById(`n-${k}`).textContent)),
+    arcs: document.querySelectorAll('#ring circle').length,
   }));
   h.check('popup UI shows host, counts and enabled switch', uiState.host === 'publisher.test' && uiState.blocked >= 6 && uiState.popups >= 4 && uiState.toggle === true, uiState);
+  h.check('popup UI: counts by kind add up to the total and draw the ring', uiState.kinds.reduce((a, b) => a + b, 0) === uiState.blocked && uiState.kinds[0] > 0 && uiState.arcs >= 2, uiState);
   await ui.click('#report');
   await ui.type('#report-note', 'images missing');
   await ui.click('#report-send');

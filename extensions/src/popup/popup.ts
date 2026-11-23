@@ -15,6 +15,7 @@ interface State {
   site: string | null;
   enabled: boolean;
   blocked: number;
+  kinds?: Record<Kind, number>;
   popupsBlocked: number;
   lists: Record<string, { fetchedAt: number | null; error: string | null }>;
   dnr: { installed: number; dropped: number; rejected: number } | null;
@@ -48,6 +49,44 @@ interface FixStatus {
 
 const $ = (id: string) => document.getElementById(id)!;
 
+type Kind = 'ads' | 'trackers' | 'danger' | 'other';
+const KINDS: Kind[] = ['ads', 'trackers', 'danger', 'other'];
+const SVG = 'http://www.w3.org/2000/svg';
+
+/** The ring around the count: one arc per kind, with a small gap between arcs. */
+function drawRing(kinds: Record<Kind, number> | null, full = false): void {
+  const svg = $('ring');
+  svg.textContent = '';
+  const size = 104, stroke = 10, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const arc = (colour: string, len: number, offset: number, round: boolean) => {
+    const el = document.createElementNS(SVG, 'circle');
+    el.setAttribute('cx', '52');
+    el.setAttribute('cy', '52');
+    el.setAttribute('r', String(r));
+    el.setAttribute('fill', 'none');
+    el.setAttribute('stroke', colour);
+    el.setAttribute('stroke-width', String(stroke));
+    if (round) el.setAttribute('stroke-linecap', 'round');
+    el.setAttribute('stroke-dasharray', `${len} ${c}`);
+    el.setAttribute('stroke-dashoffset', String(-offset));
+    el.setAttribute('transform', 'rotate(-90 52 52)');
+    svg.appendChild(el);
+  };
+  arc('var(--quiet)', c, 0, false);
+  if (full) return arc('var(--accent)', c, 0, false);
+  const parts = KINDS.map((k) => [k, kinds?.[k] ?? 0] as const).filter(([, n]) => n > 0);
+  const total = parts.reduce((a, [, n]) => a + n, 0);
+  if (!total) return;
+  // Round caps reach stroke/2 past each end, so leave that much (plus a gap) between arcs.
+  const gap = parts.length > 1 ? stroke + 3 : 0;
+  let off = gap / 2;
+  for (const [k, n] of parts) {
+    const len = (c * n) / total;
+    arc(`var(--k-${k})`, Math.max(len - gap, 0.01), off, true);
+    off += len;
+  }
+}
+
 function ago(ts: number | null): string {
   if (!ts) return 'never';
   const m = Math.round((Date.now() - ts) / 60000);
@@ -76,6 +115,7 @@ async function render(): Promise<void> {
     return;
   }
   $('host').textContent = s.host ?? 'This page';
+  $('fav').textContent = (s.host ?? '').replace(/^www\./, '').charAt(0) || '·';
   $('access').hidden = s.hostAccess;
   const cb = s.contentBlockers;
   $('cb-off').hidden = !cb || (cb.on === cb.total && !cb.error);
@@ -90,17 +130,32 @@ async function render(): Promise<void> {
   const toggle = $('toggle') as HTMLInputElement;
   toggle.checked = s.enabled;
   toggle.disabled = !s.host || !!s.pausedUntil;
-  $('toggle-label').textContent = !s.host ? 'Not available on this page' : s.pausedUntil ? 'Paused everywhere' : s.enabled ? 'Blocking is on for this site' : 'Blocking is off for this site';
+  $('toggle-label').textContent = !s.host ? 'Not available on this page' : s.pausedUntil ? `Paused ${untilText(s.pausedUntil)}` : s.enabled ? 'Protected' : 'Off on this site';
+  $('toggle-label').className = `state${s.pausedUntil ? ' paused' : s.host && s.enabled ? ' on' : ''}`;
+  $('summary').classList.toggle('paused', !!s.pausedUntil);
   renderPause(s, tab.id);
   void renderFullProtection(tab.id);
-  $('log-open').hidden = s.platform === 'safari';
-  if (s.platform === 'safari') {
+  const safari = s.platform === 'safari';
+  $('log-open').hidden = safari;
+  $('acts').classList.toggle('single', safari);
+  const active = s.enabled && !!s.host && !s.pausedUntil;
+  const big = $('blocked');
+  if (safari) {
     // Safari doesn't tell extensions which requests its content blocker stopped, so a
     // count would always read 0. Show that blocking is active instead of a wrong number.
-    $('blocked').textContent = s.enabled && s.host ? 'On' : 'Off';
-    $('blocked-label').textContent = 'blocking (Safari doesn\u2019t share counts)';
+    big.textContent = active ? 'On' : 'Off';
+    $('blocked-label').textContent = 'blocking';
+    drawRing(null, active);
   } else {
-    $('blocked').textContent = String(s.blocked);
+    big.textContent = s.blocked > 9999 ? `${Math.floor(s.blocked / 1000)}k` : String(s.blocked);
+    $('blocked-label').textContent = 'blocked';
+    drawRing(s.kinds ?? null);
+  }
+  big.classList.toggle('long', big.textContent.length > 3);
+  $('safari-counts').hidden = !safari;
+  for (const k of KINDS) {
+    $(`n-${k}`).textContent = String(s.kinds?.[k] ?? 0);
+    ($(`n-${k}`).parentElement as HTMLElement).hidden = safari || (k === 'danger' && !s.kinds?.danger);
   }
   $('popups').textContent = String(s.popupsBlocked);
   const lists = Object.entries(s.lists);
@@ -108,8 +163,9 @@ async function render(): Promise<void> {
   const errors = lists.filter(([, l]) => l.error).map(([id]) => id);
   let status = lists.length ? `Filter lists updated ${ago(newest || null)}` : 'Filter lists not downloaded yet';
   if (errors.length) status += ` · update failed: ${errors.join(', ')}`;
-  if (s.dnr) status += ` · ${s.dnr.installed.toLocaleString()} rules active${s.dnr.dropped ? `, ${s.dnr.dropped} skipped` : ''}`;
+  if (s.dnr) status += ` · ${s.dnr.installed.toLocaleString()} rules`;
   $('status').textContent = status;
+  $('status').title = s.dnr?.dropped ? `${s.dnr.dropped.toLocaleString()} list rules can\u2019t be used in this browser and were skipped.` : '';
 
   renderCookies(s);
   renderFix(s.fix, tab.id, s.suggestFix);
@@ -153,18 +209,21 @@ async function renderFullProtection(tabId: number): Promise<void> {
 }
 
 function renderPause(s: State, tabId: number): void {
-  $('paused').hidden = !s.pausedUntil;
-  $('pause-open').hidden = !!s.pausedUntil;
-  if (s.pausedUntil) $('paused-until').textContent = untilText(s.pausedUntil);
+  const paused = !!s.pausedUntil;
+  $('pause-label').textContent = paused ? 'Resume' : 'Pause';
+  $('pause-icon').toggleAttribute('hidden', paused);
+  $('play-icon').toggleAttribute('hidden', !paused);
+  $('pause-open').title = paused ? 'Turn blocking back on everywhere' : 'Pause blocking on every site';
+  document.querySelector('.rounds')!.classList.toggle('dimmed', paused);
   const set = async (minutes: number) => {
     await api.runtime.sendMessage({ type: 'pause:set', minutes });
     $('pause-menu').hidden = true;
     await api.tabs.reload(tabId).catch(() => undefined);
     await render();
   };
-  $('resume').onclick = () => void set(0);
   $('pause-open').onclick = () => {
-    $('pause-menu').hidden = !$('pause-menu').hidden;
+    if (paused) void set(0);
+    else $('pause-menu').hidden = !$('pause-menu').hidden;
   };
   for (const b of document.querySelectorAll<HTMLButtonElement>('#pause-menu button')) {
     b.onclick = () => {
@@ -200,7 +259,7 @@ function renderPause(s: State, tabId: number): void {
     clearTimeout(slow);
     ($('describe-go') as HTMLButtonElement).disabled = false;
     if (!res?.ok) st.textContent = `Couldn\u2019t look at this page: ${res?.error ?? 'unknown error'}`;
-    else if (!res.found) st.textContent = 'Nothing on this page matches that. Try other words, or use \u201cHide an element\u201d.';
+    else if (!res.found) st.textContent = 'Nothing on this page matches that. Try other words, or use \u201cHide\u201d.';
     else {
       st.textContent = 'Found it. Check the highlighted part on the page and press Hide.';
       if (!new URLSearchParams(location.search).get('tabId')) setTimeout(() => window.close(), 900);
@@ -297,9 +356,9 @@ function renderFixes(s: State): void {
 }
 
 $('report').addEventListener('click', () => {
-  $('report-form').hidden = false;
-  $('report').hidden = true;
-  ($('report-note') as HTMLTextAreaElement).focus();
+  $('report-done').hidden = true;
+  $('report-form').hidden = !$('report-form').hidden;
+  if (!$('report-form').hidden) ($('report-note') as HTMLTextAreaElement).focus();
 });
 
 $('report-send').addEventListener('click', async () => {

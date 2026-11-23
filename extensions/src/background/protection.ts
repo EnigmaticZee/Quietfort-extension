@@ -386,7 +386,7 @@ async function onBeforeNavigate(d: NavDetails): Promise<void> {
   const entry: (typeof guardLog)[number] = { host: v.host, list: v.list, frameId: d.frameId, at: Date.now(), lookupUs: v.lookupUs };
   guardLog.push(entry);
   if (guardLog.length > 50) guardLog.shift();
-  addBlocked(d.tabId, 1);
+  addBlocked(d.tabId, 1, 'request', 'danger');
   recordBlocked(d.tabId, { url: d.url, type: d.frameId === 0 ? 'main_frame' : 'sub_frame', src: null, rule: `protection:${v.list}`, at: d.timeStamp });
   const t0 = Date.now();
   // Replace the navigation first (fastest), then make DNR block the host for the rest of the session.
