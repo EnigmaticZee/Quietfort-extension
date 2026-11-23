@@ -90,6 +90,12 @@ p { margin: 0; }
 .legend [data-kind="other"] i { background: var(--k-other); }
 .legend [data-kind="popups"] i { border: 2px solid var(--k-other); }
 #safari-counts { position: relative; }
+.summary.na .split, .summary.na #safari-counts { display: none; }
+#na-note { position: relative; margin: 0; }
+.fav svg { width: 17px; height: 17px; }
+.rounds button:disabled { opacity: .4; cursor: default; }
+.rounds button:disabled:hover .rb { transform: none; }
+.describe.off { opacity: .5; }
 
 /* Switch */
 .sw { position: relative; flex: none; width: 40px; height: 24px; display: inline-block; cursor: pointer; }
@@ -200,3 +206,4 @@ footer .meta::before { content: ""; display: inline-block; width: 6px; height: 6
 .bn .bt strong { font-size: 12.5px; }
 .bn .bt .muted { font-size: 11.5px; }
 .bn button { flex: none; border-radius: 99px; padding: 6px 12px; }
+.summary.na .state { color: var(--muted); }

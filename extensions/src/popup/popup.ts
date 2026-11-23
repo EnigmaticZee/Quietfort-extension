@@ -115,7 +115,16 @@ async function render(): Promise<void> {
     return;
   }
   $('host').textContent = s.host ?? 'This page';
-  $('fav').textContent = (s.host ?? '').replace(/^www\./, '').charAt(0) || '·';
+  const na = !s.host;
+  const fav = $('fav');
+  if (na) fav.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6.5 17.5l11-11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  else fav.textContent = s.host!.replace(/^www\./, '').charAt(0);
+  $('summary').classList.toggle('na', na);
+  $('na-note').hidden = !na;
+  // Hide, Zap, Fix site and the describe field act on the page, so they can't work here.
+  // Pause and the cookie switch are global and stay usable.
+  for (const id of ['pick', 'zap', 'fix', 'describe-text', 'describe-go']) ($(id) as HTMLButtonElement | HTMLInputElement).disabled = na;
+  $('describe-form').classList.toggle('off', na);
   $('access').hidden = s.hostAccess;
   const cb = s.contentBlockers;
   $('cb-off').hidden = !cb || (cb.on === cb.total && !cb.error);
@@ -130,7 +139,7 @@ async function render(): Promise<void> {
   const toggle = $('toggle') as HTMLInputElement;
   toggle.checked = s.enabled;
   toggle.disabled = !s.host || !!s.pausedUntil;
-  $('toggle-label').textContent = !s.host ? 'Not available on this page' : s.pausedUntil ? `Paused ${untilText(s.pausedUntil)}` : s.enabled ? 'Protected' : 'Off on this site';
+  $('toggle-label').textContent = !s.host ? 'Can\u2019t run on this page' : s.pausedUntil ? `Paused ${untilText(s.pausedUntil)}` : s.enabled ? 'Protected' : 'Off on this site';
   $('toggle-label').className = `state${s.pausedUntil ? ' paused' : s.host && s.enabled ? ' on' : ''}`;
   $('summary').classList.toggle('paused', !!s.pausedUntil);
   renderPause(s, tab.id);
@@ -297,7 +306,7 @@ let pollTimer: ReturnType<typeof setTimeout> | null = null;
 function renderFix(f: FixStatus, tabId: number, suggest: boolean): void {
   const running = f.active;
   $('suggest').hidden = !suggest || running;
-  ($('fix') as HTMLButtonElement).disabled = running;
+  ($('fix') as HTMLButtonElement).disabled = running || $('summary').classList.contains('na');
   $('fix-progress').hidden = !running;
   $('fix-question').hidden = !f.question;
   if (running) {
