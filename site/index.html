@@ -350,13 +350,26 @@ footer a:hover { color: var(--fg); }
 .demo-panel { background: var(--bg2); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow);
   font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; position: sticky; top: 84px; }
 .dpn-card { background: var(--card); border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; }
-.dpn-site { display: flex; align-items: center; gap: 10px; }
+.dpn-sum { display: flex; flex-direction: column; gap: 12px; padding: 13px; }
+.dpn-site { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.dpn-fav { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--muted); font-weight: 700; }
+#dpn-state { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+#dpn-state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+#dpn-state.on { color: var(--accent-ink); }
+.dpn-split { display: flex; align-items: center; gap: 16px; }
+.dpn-ring { position: relative; width: 96px; height: 96px; flex: none; }
+.dpn-ring svg { width: 96px; height: 96px; display: block; }
+.dpn-ring div { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.dpn-ring b { font-size: 30px; line-height: 1; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.dpn-ring span { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.dpn-legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.dpn-legend li { display: flex; align-items: center; gap: 8px; }
+.dpn-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.dpn-legend i.ring { border: 2px solid var(--muted); }
+.dpn-legend em { margin-left: auto; font-style: normal; font-weight: 650; font-variant-numeric: tabular-nums; }
 .dpn-site > div { flex: 1; min-width: 0; }
 .dpn-site b { display: block; font-size: 14.5px; }
-.dpn-site span:not(.mark) { color: var(--muted); font-size: 12.5px; }
-.dpn-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.dpn-counts b { display: block; font-size: 22px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-.dpn-counts span { color: var(--muted); font-size: 12.5px; }
+.dpn-site span:not(.dpn-fav) { color: var(--muted); font-size: 12.5px; }
 .dpn-row { display: flex; align-items: center; gap: 10px; }
 .dpn-row > span:nth-child(2) { flex: 1; }
 .mini-tile { width: 26px; height: 26px; border-radius: 7px; }
@@ -451,8 +464,8 @@ footer a:hover { color: var(--fg); }
         </div>
       </div>
       <div class="shot-stack" aria-label="The Quietfort panel in light and dark themes">
-        <picture><source srcset="assets/popup-light.png" media="(prefers-color-scheme: dark)"><img class="shot back" src="assets/popup-fortNight.png" alt="" width="340" height="464"></picture>
-        <picture><source srcset="assets/popup-fortNight.png" media="(prefers-color-scheme: dark)"><img class="shot front zoomable" src="assets/popup-light.png" alt="The Quietfort panel: blocking on for this site, 5 blocked on this page, cookie banners rejected, and buttons for Hide an element, Zap and Site broken?" width="340" height="464"></picture>
+        <picture><source srcset="assets/popup-light.png" media="(prefers-color-scheme: dark)"><img class="shot back" src="assets/popup-fortNight.png" alt="" width="340" height="540"></picture>
+        <picture><source srcset="assets/popup-fortNight.png" media="(prefers-color-scheme: dark)"><img class="shot front zoomable" src="assets/popup-light.png" alt="The Quietfort panel: protected on this site, 5 blocked on this page split into ads, trackers and other, and buttons for Hide, Zap, Fix site and Pause" width="340" height="540"></picture>
       </div>
     </div>
   </section>
@@ -531,14 +544,20 @@ footer a:hover { color: var(--fg); }
         </div>
 
         <div class="demo-panel" role="group" aria-label="Quietfort panel (demo)">
-          <div class="dpn-card dpn-site">
-            <span class="mark"><svg viewBox="26 24 48 56" aria-hidden="true"><path d="M28 26h8v5h6v-5h16v5h6v-5h8v23c0 15-9.5 24.5-22 29.5C37.5 73.5 28 64 28 49z" fill="#fff"/><rect x="38" y="47" width="24" height="7" rx="3.5" fill="#0B3C45"/></svg></span>
-            <div><b>www.example.com</b><span id="dpn-state">Blocking is on for this site</span></div>
-            <button type="button" class="dpn-sw" id="dpn-block" role="switch" aria-checked="true" aria-label="Blocking on this site"><span></span></button>
-          </div>
-          <div class="dpn-counts">
-            <div class="dpn-card"><b id="dpn-blocked">0</b><span>blocked on this page</span></div>
-            <div class="dpn-card"><b id="dpn-popups">0</b><span>pop-ups closed</span></div>
+          <div class="dpn-card dpn-sum">
+            <div class="dpn-site">
+              <span class="dpn-fav" aria-hidden="true">E</span>
+              <div><b>www.example.com</b><span id="dpn-state" class="on">Protected</span></div>
+              <button type="button" class="dpn-sw" id="dpn-block" role="switch" aria-checked="true" aria-label="Blocking on this site"><span></span></button>
+            </div>
+            <div class="dpn-split">
+              <div class="dpn-ring"><svg id="dpn-ring" viewBox="0 0 104 104" aria-hidden="true"></svg><div><b id="dpn-blocked">0</b><span>blocked</span></div></div>
+              <ul class="dpn-legend">
+                <li><i style="background:var(--ads)"></i>Ads<em id="dpn-n-ads">0</em></li>
+                <li><i style="background:var(--trackers)"></i>Trackers<em id="dpn-n-trk">0</em></li>
+                <li><i class="ring"></i>Pop-ups closed<em id="dpn-popups">0</em></li>
+              </ul>
+            </div>
           </div>
           <div class="dpn-card dpn-row">
             <span class="tile t-ck mini-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M9 10h.01M14 9h.01M10 14.5h.01M15 14h.01"/></svg></span>
@@ -608,7 +627,7 @@ footer a:hover { color: var(--fg); }
         </article>
         <article class="card reveal">
           <div class="tile t-deep" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5a4 4 0 004.9 4.9L11 19a2.1 2.1 0 01-3-3l8.6-8.4a4 4 0 00-2.1-2.1z"/></svg></div>
-          <h3>Site broken? One button.</h3>
+          <h3>Site broken? One button: Fix site.</h3>
           <p>If a page stops working, Quietfort finds the exact rule that broke it and switches only that one off, not your whole protection.</p>
         </article>
       </div>
@@ -649,7 +668,7 @@ footer a:hover { color: var(--fg); }
         </div>
         <ul>
           <li><b>Undo</b> any removal with one click or ⌘Z.</li>
-          <li><b>Nothing is saved.</b> For a permanent fix, use Hide an element.</li>
+          <li><b>Nothing is saved.</b> For a permanent fix, use Hide.</li>
           <li><b>Links don't fire</b> while zapping, so you never open a page by accident.</li>
         </ul>
       </div>
@@ -679,9 +698,9 @@ footer a:hover { color: var(--fg); }
         </ul>
       </div>
       <div class="themes reveal">
-        <figure><img class="shot zoomable" src="assets/popup-light.png" alt="The panel in the Light theme" width="340" height="464" ><figcaption>Light</figcaption></figure>
-        <figure><img class="shot zoomable" src="assets/popup-fortNight.png" alt="The panel in the Fort Night theme" width="340" height="464" ><figcaption>Fort Night</figcaption></figure>
-        <figure><img class="shot zoomable" src="assets/popup-graphite.png" alt="The panel in the Graphite theme" width="340" height="464" ><figcaption>Graphite</figcaption></figure>
+        <figure><img class="shot zoomable" src="assets/popup-light.png" alt="The panel in the Light theme" width="340" height="540" ><figcaption>Light</figcaption></figure>
+        <figure><img class="shot zoomable" src="assets/popup-fortNight.png" alt="The panel in the Fort Night theme" width="340" height="540" ><figcaption>Fort Night</figcaption></figure>
+        <figure><img class="shot zoomable" src="assets/popup-graphite.png" alt="The panel in the Graphite theme" width="340" height="540" ><figcaption>Graphite</figcaption></figure>
       </div>
       <p class="zoom-hint">Tap or click a panel to see it full size.</p>
     </div>
@@ -767,7 +786,7 @@ footer a:hover { color: var(--fg); }
         <div>
           <details><summary>Is Quietfort really free?</summary><p>Yes. No trial, no subscription, and no ads let through for money. The code is open source under the MPL-2.0.</p></details>
           <details><summary>Will it slow my browser down?</summary><p>No. Blocking happens inside the browser's own fast filtering engine, and because ads and trackers never load, most pages finish sooner.</p></details>
-          <details><summary>A site broke. What do I do?</summary><p>Open the panel and press <b>Site broken?</b>. Quietfort finds the rule causing the problem and turns off only that one. You can also switch blocking off for the site with one toggle.</p></details>
+          <details><summary>A site broke. What do I do?</summary><p>Open the panel and press <b>Fix site</b>. Quietfort finds the rule causing the problem and turns off only that one. You can also switch blocking off for the site with one toggle.</p></details>
         </div>
         <div>
           <details><summary>Where do the filter lists come from?</summary><p>From their volunteer maintainers: EasyList, EasyPrivacy, the uBlock Origin and AdGuard lists, and others. Your browser downloads them directly; they're credited in the extension's notices.</p></details>
@@ -863,6 +882,15 @@ footer a:hover { color: var(--fg); }
   const flash = (t) => { toast.textContent = t; toast.classList.add('show'); later(1900, () => toast.classList.remove('show')); };
   const ads = () => [...page.querySelectorAll('[data-ad]')];
   const countFor = () => (blocking ? TRACKERS + ads().length : 0);
+  function drawRing() {
+    const a = blocking ? ads().length : 0, t = blocking ? TRACKERS : 0;
+    $('dpn-n-ads').textContent = a; $('dpn-n-trk').textContent = t;
+    const svg = $('dpn-ring'), r = 47, c = 2 * Math.PI * r, gap = a && t ? 13 : 0;
+    const arc = (col, len, off, cap) => '<circle cx="52" cy="52" r="47" fill="none" stroke="' + col + '" stroke-width="10"' + (cap ? ' stroke-linecap="round"' : '') + ' stroke-dasharray="' + Math.max(len, 0.01) + ' ' + c + '" stroke-dashoffset="' + -off + '" transform="rotate(-90 52 52)"/>';
+    let html = arc('color-mix(in srgb, var(--muted) 22%, transparent)', c, 0, false), off = gap / 2;
+    for (const [n, col] of [[a, 'var(--ads)'], [t, 'var(--trackers)']]) { if (!n) continue; const len = c * n / (a + t); html += arc(col, len - gap, off, true); off += len; }
+    svg.innerHTML = html;
+  }
 
   function animateCount(to) {
     const el = $('dpn-blocked'); const from = shown; shown = to;
@@ -889,7 +917,8 @@ footer a:hover { color: var(--fg); }
     zapped.forEach((el) => el.classList.remove('gone', 'fading')); zapped = []; updateZapBar();
     page.querySelectorAll('[data-zap]').forEach((el) => { el.classList.remove('found'); el.classList.toggle('gone', hiddenForGood.has(el)); });
     demo.dataset.blocking = blocking ? 'on' : 'off';
-    $('dpn-state').textContent = blocking ? 'Blocking is on for this site' : 'Blocking is off for this site';
+    $('dpn-state').textContent = blocking ? 'Protected' : 'Off on this site'; $('dpn-state').className = blocking ? 'on' : '';
+    drawRing();
     shown = 0; $('dpn-blocked').textContent = '0'; badge.textContent = '0';
     popups = 0; $('dpn-popups').textContent = '0';
     cookie.classList.remove('up'); cookie.hidden = false; $('dp-reject').classList.remove('press');
@@ -897,7 +926,7 @@ footer a:hover { color: var(--fg); }
     later(500, () => cookie.classList.add('up'));
     if (blocking && cookies) {
       later(1300, () => $('dp-reject').classList.add('press'));
-      later(1700, () => { closeCookie(); popups = 1; $('dpn-popups').textContent = '1'; flash('Cookie banner rejected'); });
+      later(1700, () => { closeCookie(); flash('Cookie banner rejected'); });
     }
   }
   function closeCookie() { cookie.classList.remove('up'); later(500, () => { cookie.hidden = true; }); }
