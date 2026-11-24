@@ -28,7 +28,7 @@ import { featureCases } from './feature-cases.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const EXT = join(ROOT, 'dist/firefox-e2e');
 const FIREFOX = process.env.FIREFOX_PATH || '/Applications/Firefox.app/Contents/MacOS/firefox';
-const ADDON_ID = 'adblocker-companion@adblocker.invalid';
+const ADDON_ID = 'quietfort@enigmaticzee.github.io';
 const UUID = '6f1d2c3b-0a9e-4e7f-8d6c-5b4a39281706';
 const headful = process.argv.includes('--headful');
 
