@@ -2,8 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 // Page-runtime tests in headless Chrome: loads extensions/page-runtime/tests/browser/
-// runtime.html (original scriptlets + procedural filters) and scriptlets.html
-// (uBO / AdGuard list scriptlets) and checks every result is true.
+// runtime.html (original scriptlets + procedural filters), scriptlets.html
+// (uBO / AdGuard list scriptlets) and trusted-types.html (a page that enforces Trusted Types, like YouTube) and checks every result is true.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
@@ -29,7 +29,7 @@ const origin = `http://127.0.0.1:${server.address().port}`;
 const h = createHarness('runtime scriptlets');
 const browser = await puppeteer.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
 try {
-  for (const page of ['runtime.html', 'scriptlets.html']) {
+  for (const page of ['runtime.html', 'scriptlets.html', 'trusted-types.html']) {
     const p = await browser.newPage();
     const errors = [];
     p.on('pageerror', (e) => errors.push(String(e)));

@@ -56,6 +56,9 @@ var CONFIG = {
     ["json-edit", ["..items.*[?.kind==\"ad\"]"]],
     ["json-edit", ["..secret=1"]],
     ["trusted-json-edit-fetch-response", [".flag=true", "jsonedit"]],
+    ["trusted-edit-inbound-object", ["JSON.stringify", "0", "[?.attest][?.ua*=\"chan\"].client[?.name==\"WEB\"]+={\"screen\":\"CH\"}"]],
+    ["trusted-edit-inbound-object", ["JSON.stringify", "0", "[?.attest][?.ua*=\"yahi\"]+={\"params\":\"Y\"}"]],
+    ["trusted-edit-inbound-object", ["JSON.stringify", "0", "[?.attest][?.ua=/chan|yahi/].ref=repl({\"regex\":\"(?:#rx)?$\",\"replacement\":\"#rx\"})"]],
     ["trusted-click-element", ["#accept-all"]],
     ["trusted-click-element", ["#accept-necessary"]]
   ],
@@ -209,6 +212,15 @@ setTimeout(function () {
   R.jsonEdit = je.items.length === 1 && je.items[0].kind === 'post' && je.a.secret === 1;
   var jf = await fetch('data:application/json,' + encodeURIComponent('{"flag":false}') + '#jsonedit').then(function (r) { return r.json(); });
   R.trustedJsonEditFetch = jf.flag === true;
+  // Query starting with a filter on the object itself, merge (+=), repl(), and a regex filter.
+  var ibPlain = JSON.stringify({ attest: 1, ua: 'x', client: { name: 'WEB' }, ref: 'p' });
+  var ibChan = JSON.stringify({ attest: 1, ua: 'x; chan', client: { name: 'WEB' }, ref: 'p' });
+  var ibYahi = JSON.stringify({ attest: 1, ua: 'x; yahi', client: { name: 'WEB' }, ref: 'p#rx' });
+  var ibNoAttest = JSON.stringify({ ua: 'x; chan', client: { name: 'WEB' }, ref: 'p' });
+  R.inboundEditFilterMergeRepl = ibPlain === '{"attest":1,"ua":"x","client":{"name":"WEB"},"ref":"p"}' &&
+    ibChan === '{"attest":1,"ua":"x; chan","client":{"name":"WEB","screen":"CH"},"ref":"p#rx"}' &&
+    ibYahi === '{"attest":1,"ua":"x; yahi","client":{"name":"WEB"},"ref":"p#rx","params":"Y"}' &&
+    ibNoAttest === '{"ua":"x; chan","client":{"name":"WEB"},"ref":"p"}' ? true : [ibPlain, ibChan, ibYahi, ibNoAttest].join(' | ');
   R.clickNeverAccepts = window.acceptClicked !== true && window.necessaryClicked === true;
   R.abpProperties = hidden('abp1') === true && hidden('abp2') === false;
   var failed = Object.keys(R).filter(function (k) { return R[k] !== true; });

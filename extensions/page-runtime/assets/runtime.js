@@ -603,19 +603,43 @@
     s = s.toLowerCase();
     return function (n) { return n.nodeName.toLowerCase() === s; };
   }
+  // Pages that enforce Trusted Types (require-trusted-types-for 'script', e.g. YouTube) refuse a plain
+  // string as a script's new text. Pass it through a policy of our own; if the page's CSP doesn't allow
+  // creating one, fall back to the plain string (the browser then refuses it, as before).
+  var ttPolicy;
+  function scriptText(s) {
+    if (ttPolicy === undefined) {
+      ttPolicy = null;
+      try {
+        if (W.trustedTypes && W.trustedTypes.createPolicy) {
+          ttPolicy = W.trustedTypes.createPolicy('quietfort-node-text', { createScript: function (x) { return x; } });
+        }
+      } catch (e) { ttPolicy = null; }
+    }
+    return ttPolicy ? ttPolicy.createScript(s) : s;
+  }
+
   function nodeTextEditor(nodeName, pattern, replacement, extra) {
     if (!nodeName || pattern === undefined || pattern === '') return;
     var nameOk = nodeNameTest(nodeName), re = toRegex(pattern);
     var opts = namedArgs(extra || [], 0), cond = opts.condition ? toRegex(opts.condition) : null;
     var tag = /^[a-z][a-z0-9-]*$/i.test(nodeName) ? nodeName : null;
+    // Each node is edited once: the edited text can still match (a replacement that keeps the match, e.g.
+    // code put in front of it), and the edit itself is a mutation that would otherwise bring it back here.
+    var done = typeof WeakSet === 'function' ? new WeakSet() : null;
     var handle = function (n) {
-      if (!nameOk(n)) return;
+      if (!nameOk(n) || (done && done.has(n))) return;
       var isText = n.nodeType === 3;
       var text = isText ? n.nodeValue : n.textContent;
       if (!text || !re.test(text) || (cond && !cond.test(text))) return;
       var out = replacement === null ? '' : replaceText(text, pattern, replacement);
       if (out === text) return;
-      if (isText) n.nodeValue = out; else n.textContent = out;
+      if (done) done.add(n);
+      var inScript = isText ? !!(n.parentNode && n.parentNode.nodeName === 'SCRIPT') : n.nodeName === 'SCRIPT';
+      try {
+        if (isText) n.nodeValue = inScript ? scriptText(out) : out;
+        else n.textContent = inScript ? scriptText(out) : out;
+      } catch (e) {}
     };
     var visit = function (n) {
       if (n.nodeType === 3) { if (n.parentNode && nameOk(n.parentNode)) handle(n.parentNode); else handle(n); return; }
@@ -1109,8 +1133,12 @@
   // ---------- json-edit (a small JSONPath subset) ----------
   // Paths: `..key` (any depth), `.key`, `.*` / `[*]`, `[?.k=="v"]` / `[?.k]` filters,
   // optionally ending in `=json` (assignment: trusted lists only).
+  // JSON query, as used by json-edit / edit-inbound-object and friends:
+  //   steps:  .key  ..key  .*  [*]  [?.path]  [?.path==v]  != ^= $= *=  and  [?.path=/regex/flags]
+  //   then optionally an edit:  =value (set)  +=value (merge an object in)  =repl({"regex":..,"replacement":..})
+  // A query may start with a filter, which then applies to the object itself.
   function parseJsonq(q) {
-    var steps = [], i = 0, s = String(q || '').trim(), assign;
+    var steps = [], i = 0, s = String(q || '').trim(), assign, merge, repl;
     var eq = -1, depth = 0, quote = null;
     for (var k = 0; k < s.length; k++) {
       var ch = s.charAt(k);
@@ -1120,13 +1148,30 @@
       else if (ch === ']') depth--;
       else if (ch === '=' && depth === 0 && s.charAt(k - 1) !== '=' && s.charAt(k + 1) !== '=') { eq = k; break; }
     }
-    if (eq >= 0) { try { assign = { v: nativeParse(s.slice(eq + 1)) }; } catch (e) { return null; } s = s.slice(0, eq); }
-    if (s.charAt(0) !== '.') s = '.' + s;
+    if (eq >= 0) {
+      var rhs = s.slice(eq + 1).trim(), lhsEnd = eq;
+      if (s.charAt(eq - 1) === '+') { merge = true; lhsEnd = eq - 1; }
+      var rm = /^repl\(([\s\S]*)\)$/.exec(rhs);
+      try {
+        if (rm) {
+          var r = nativeParse(rm[1]);
+          if (!r || typeof r.regex !== 'string') return null;
+          repl = { re: new RegExp(r.regex, typeof r.flags === 'string' ? r.flags : ''), to: typeof r.replacement === 'string' ? r.replacement : '' };
+        } else assign = { v: nativeParse(rhs) };
+      } catch (e) { return null; }
+      if (merge && (!assign || assign.v === null || typeof assign.v !== 'object' || Array.isArray(assign.v))) return null;
+      s = s.slice(0, lhsEnd);
+    }
+    if (s.charAt(0) !== '.' && s.charAt(0) !== '[') s = '.' + s;
     while (i < s.length) {
       var m;
       if ((m = /^\.\.([\w$-]+|\*)/.exec(s.slice(i)))) { steps.push(['desc', m[1]]); i += m[0].length; continue; }
       if ((m = /^\.([\w$-]+|\*)/.exec(s.slice(i)))) { steps.push(['child', m[1]]); i += m[0].length; continue; }
       if ((m = /^\[\*\]/.exec(s.slice(i)))) { steps.push(['child', '*']); i += m[0].length; continue; }
+      if ((m = /^\[\?\.([\w$.-]+)\s*=\s*\/((?:\\.|[^\/\\])+)\/([a-z]*)\]/.exec(s.slice(i)))) {
+        var rx; try { rx = new RegExp(m[2], m[3]); } catch (e) { return null; }
+        steps.push(['filter', m[1], 're', rx]); i += m[0].length; continue;
+      }
       if ((m = /^\[\?\.([\w$.-]+)\s*(?:(==|!=|\^=|\$=|\*=)\s*("(?:\\.|[^"])*"|'(?:\\.|[^'])*'|[\w.-]+))?\]/.exec(s.slice(i)))) {
         var val;
         if (m[3] !== undefined) { try { val = nativeParse(m[3].charAt(0) === "'" ? '"' + m[3].slice(1, -1).replace(/"/g, '\\"') + '"' : m[3]); } catch (e) { val = m[3]; } }
@@ -1134,7 +1179,7 @@
       }
       return null;
     }
-    return { steps: steps, assign: assign };
+    return { steps: steps, assign: assign, merge: !!merge, repl: repl };
   }
   function jsonqMatches(root, steps) {
     var cur = [{ p: null, k: null, v: root }];
@@ -1150,6 +1195,7 @@
           var v = m.v;
           st[1].split('.').forEach(function (k) { v = v !== null && typeof v === 'object' ? v[k] : undefined; });
           if (st[2] === undefined) return v !== undefined;
+          if (st[2] === 're') return v !== undefined && st[3].test(String(v));
           var a = String(v), b = String(st[3]);
           return st[2] === '==' ? v === st[3] : st[2] === '!=' ? v !== st[3] : st[2] === '^=' ? a.indexOf(b) === 0 : st[2] === '$=' ? a.slice(-b.length) === b : a.indexOf(b) >= 0;
         });
@@ -1158,12 +1204,25 @@
     });
     return cur;
   }
+
   function jsonEditor(q, trusted) {
     var parsed = parseJsonq(q);
-    if (!parsed || (parsed.assign && !trusted)) return null;
+    if (!parsed || ((parsed.assign || parsed.repl) && !trusted)) return null;
     return function (obj) {
       if (obj === null || typeof obj !== 'object') return false;
-      var hits = jsonqMatches(obj, parsed.steps).filter(function (m) { return m.p; });
+      var all = jsonqMatches(obj, parsed.steps);
+      // Merge edits the matched objects themselves (the root included); the others edit a key of a parent.
+      if (parsed.merge) {
+        var n = 0;
+        all.forEach(function (m) { if (m.v && typeof m.v === 'object' && !Array.isArray(m.v)) { Object.keys(parsed.assign.v).forEach(function (k) { m.v[k] = parsed.assign.v[k]; }); n++; } });
+        return n > 0;
+      }
+      var hits = all.filter(function (m) { return m.p; });
+      if (parsed.repl) {
+        var changed = 0;
+        hits.forEach(function (m) { if (typeof m.v === 'string') { var out = m.v.replace(parsed.repl.re, parsed.repl.to); if (out !== m.v) { m.p[m.k] = out; changed++; } } });
+        return changed > 0;
+      }
       hits.reverse().forEach(function (m) {
         if (parsed.assign) m.p[m.k] = parsed.assign.v;
         else if (Array.isArray(m.p)) m.p.splice(Number(m.k), 1);

@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scriptlets on a page that enforces Trusted Types</title>
+<script>
+var xhr = new XMLHttpRequest(); xhr.open('GET', '/assets/runtime.js', false); xhr.send();
+(0, eval)(xhr.responseText.trim().replace(/;$/, '') + '(' + JSON.stringify({ s: [
+  ["replace-node-text", ["script", "/var ttMode = 'ads'/", "var ttMode = 'clean'"]],
+  ["replace-node-text", ["script", "/^window\\.keepMe/", "window.prepended = true; $&", "sedCount", "1"]]
+] }) + ')');
+</script>
+<!-- From here on, scripts can't be given plain strings as code (like YouTube). -->
+<meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script'">
+</head><body>
+<script>window.R = {};</script>
+<script>var ttMode = 'ads'; window.ttSeen = ttMode;</script>
+<script>window.keepMe = (window.keepMe || 0) + 1;</script>
+<pre id="out"></pre>
+<script>
+(function () {
+  var enforced = false;
+  try { document.createElement('script').text = '1'; } catch (e) { enforced = true; }
+  R.trustedTypesEnforced = enforced;
+  R.replaceNodeTextUnderTrustedTypes = window.ttSeen === 'clean' ? true : String(window.ttSeen);
+  // The edited text still matches its pattern: it must be edited (and run) once, not in a loop.
+  R.replaceNodeTextOnce = window.prepended === true && window.keepMe === 1 ? true : JSON.stringify({ p: window.prepended, k: window.keepMe });
+  var failed = Object.keys(R).filter(function (k) { return R[k] !== true; });
+  window.__results = { total: Object.keys(R).length, failed: failed, detail: R };
+  document.getElementById('out').textContent = JSON.stringify(window.__results, null, 1);
+})();
+</script>
+</body></html>
