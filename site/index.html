@@ -766,13 +766,19 @@ footer a:hover { color: var(--fg); }
         <article class="dl">
           <header><img class="engine" src="assets/browsers/safari.svg" alt="" width="46" height="46"><div><h3>Safari</h3><p class="works">Safari on macOS</p></div></header>
           <div class="chips"><span class="chip has-logo"><img src="assets/browsers/safari.svg" alt="" width="16" height="16">Safari 17+</span><span class="chip">macOS</span></div>
-          <span class="status soon">For developers today</span>
+          <span class="status">Ready to install</span>
           <div class="actions">
-            <a class="btn btn-ghost" href="https://github.com/EnigmaticZee/Quietfort-extension#safari">Build from source</a>
+            <a class="btn btn-primary" href="https://github.com/EnigmaticZee/Quietfort-extension/releases/latest/download/quietfort-safari.zip">Download for Safari</a>
             <span class="store">Mac App Store: coming soon</span>
           </div>
-          <details class="how"><summary>Why the App Store?</summary>
-            <p style="margin-top:10px">Safari only runs extensions that come inside a signed Mac app. Quietfort's small companion app also holds the extra rule sets that let Safari block as much as the other browsers.</p>
+          <details class="how"><summary>How to install</summary>
+            <ol>
+              <li>Unzip <code>quietfort-safari.zip</code> and move <b>Quietfort for Safari</b> to your Applications folder.</li>
+              <li>Open it once. It is signed and checked by Apple, so macOS opens it without warnings.</li>
+              <li>In <b>Safari → Settings → Extensions</b>, turn on <b>Quietfort for Safari</b> and <b>Quietfort Rules 1, 2 and 3</b>. All four are needed: Safari limits how many rules one extension can hold.</li>
+              <li>In <b>Safari → Settings → Websites → Quietfort for Safari</b>, allow it on all websites.</li>
+            </ol>
+            <p style="margin-top:10px">This download doesn't update itself. Get new versions here until the Mac App Store listing is ready.</p>
           </details>
         </article>
       </div>

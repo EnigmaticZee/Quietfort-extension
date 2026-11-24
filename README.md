@@ -47,7 +47,7 @@ Store listings are on the way. Until then, install the latest release directly:
 |---|---|
 | **Chrome, Edge, Brave, Opera, Vivaldi** | Download [`quietfort-chrome.zip`](https://github.com/EnigmaticZee/Quietfort-extension/releases/latest/download/quietfort-chrome.zip) and unzip it. Open `chrome://extensions` (or `edge://extensions`, `brave://extensions`…), turn on **Developer mode**, click **Load unpacked** and choose the folder. For full protection (the filter lists' fixes for YouTube and sites that block ad blockers), press **Turn on full protection** in Quietfort and switch on **Allow User Scripts**: Chrome only runs downloaded page fixes after you allow it. |
 | **Firefox** | Download [`quietfort-firefox.zip`](https://github.com/EnigmaticZee/Quietfort-extension/releases/latest/download/quietfort-firefox.zip). Open `about:debugging#/runtime/this-firefox` and click **Load Temporary Add-on**. Firefox removes it on restart until the Add-ons listing is live. |
-| **Safari** | Coming to the Mac App Store. Developers can [build it from source](#safari). |
+| **Safari** | [Download the signed app](https://github.com/EnigmaticZee/Quietfort-extension/releases/latest/download/quietfort-safari.zip) (macOS, Safari 17+), then turn on Quietfort and its three Rules extensions in Safari → Settings → Extensions. Mac App Store listing coming. Developers can also [build it from source](#safari). |
 
 ## Privacy
 
