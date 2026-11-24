@@ -35,6 +35,8 @@ const AUTOCONSENT_FILES = [
 const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
 const VERSION = pkg.version;
 const NAME = 'Quietfort';
+/** Full name: what the stores show as the listing title (Chrome takes it from the manifest). */
+const FULL_NAME = 'Quietfort – Ad Blocker & Privacy';
 const DESCRIPTION = 'Blocks ads, trackers, popups and dangerous sites using filter lists downloaded from their maintainers.';
 
 const platforms = process.argv.slice(2).filter((a) => !a.startsWith('-'));
@@ -121,7 +123,8 @@ const GIF_1X1 = Buffer.from([
 function manifest(platform) {
   const common = {
     manifest_version: 3,
-    name: NAME,
+    name: FULL_NAME,
+    short_name: NAME,
     version: VERSION,
     description: DESCRIPTION,
     icons: { 16: 'icons/16.png', 32: 'icons/32.png', 48: 'icons/48.png', 128: 'icons/128.png' },
