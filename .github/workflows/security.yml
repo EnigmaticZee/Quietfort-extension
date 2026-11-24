@@ -36,6 +36,7 @@ jobs:
           status=0
           : > report.md
           for pkg in extensions/package.json tools/*/package.json; do
+            [ -f "$pkg" ] || continue # tools/ may not exist: an unmatched glob is not a package
             dir=$(dirname "$pkg")
             # Only what we ship/run (no dev dependencies); --package-lock-only needs no install.
             if ! out=$(cd "$dir" && npm audit --omit=dev --package-lock-only 2>&1); then
