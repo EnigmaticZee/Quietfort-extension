@@ -24,13 +24,13 @@
     "test:e2e:extras": "node scripts/build.mjs chrome && node test/e2e/extras.e2e.mjs"
   },
   "devDependencies": {
-    "@types/chrome": "^0.3.7",
-    "@types/node": "^26.6.6",
+    "@types/chrome": "^0.3.8",
+    "@types/node": "^26.6.7",
     "esbuild": "^0.28.2",
-    "puppeteer-core": "^25.17.0",
+    "puppeteer-core": "^25.18.1",
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "@duckduckgo/autoconsent": "18.5.0"
+    "@duckduckgo/autoconsent": "18.11.0"
   }
 }
